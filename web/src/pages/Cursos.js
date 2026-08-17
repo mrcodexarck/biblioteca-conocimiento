@@ -9,7 +9,7 @@ const cursos = [
     descripcion: 'Aprende los fundamentos y desarrolla ejercicios prácticos de contabilidad.',
     etiqueta: 'Administrativo',
     icono: '📊',
-    enlace: '/docs/cursos/curso-contabilidad/1-modulo-uno',
+    enlace: '/docs/cursos/curso-contabilidad/modulo-uno',
   },
   {
     id: 'nomina',
@@ -17,7 +17,7 @@ const cursos = [
     descripcion: 'Recorre los conceptos, procesos y talleres prácticos relacionados con nómina.',
     etiqueta: 'Administrativo',
     icono: '🧾',
-    enlace: '/docs/cursos/curso-nomina/01-bienvenida',
+    enlace: '/docs/cursos/curso-nomina/bienvenida',
   },
 ];
 
