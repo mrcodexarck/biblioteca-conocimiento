@@ -10,11 +10,11 @@ const config = {
   future: { v4: true },
 
   url: 'https://mrcodexarck.github.io',
-  baseUrl: '/PROYECTO-BIBLIOTECA-DE-CONOCIMIENTO/',
+  baseUrl: '/biblioteca-conocimiento/',
   trailingSlash: false,
 
   organizationName: 'mrcodexarck',
-  projectName: 'PROYECTO-BIBLIOTECA-DE-CONOCIMIENTO',
+  projectName: 'biblioteca-conocimiento',
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
