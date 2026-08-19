@@ -9,4 +9,4 @@ Centraliza aquí procedimientos, conceptos y criterios necesarios para atender c
 
 ## Estructura recomendada
 
-Cada procedimiento debería indicar objetivo, entradas, pasos, resultado esperado y validación.
+Cada procedimiento debería indicar objetivo, entradas, pasos, resultado esperado y validación
