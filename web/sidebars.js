@@ -4,7 +4,7 @@ const sidebars = {
       type: 'category',
       label: 'contabilidad',
       items: [
-        'contabilidad/pruebasleo',
+        'isvleo/pruebasleo',
         'nomina/contratos',
         'nomina/novedades',
       ],
