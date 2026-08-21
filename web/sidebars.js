@@ -2,11 +2,20 @@ const sidebars = {
   documentacionSidebar: [
     {
       type: 'category',
-      label: 'Documentación',
+      label: 'contabilidad',
       items: [
-        'documentacion/contable/index',
-        'documentacion/nomina/index',
-        'documentacion/ISV/index',
+        'contabilidad/pruebasleo',
+        'nomina/contratos',
+        'nomina/novedades',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'nomina',
+      items: [
+        'nomina/calculos',
+        'nomina/contratos',
+        'nomina/novedades',
       ],
     },
   ],
