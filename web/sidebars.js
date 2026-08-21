@@ -4,9 +4,8 @@ const sidebars = {
       type: 'category',
       label: 'Documentación',
       items: [
-        'documentacion/contable/index',
-        'documentacion/nomina/index',
-        'documentacion/ISV/index',
+        'documentacion/nomina',
+        'documentacion/contabilidad',
       ],
     },
   ],
