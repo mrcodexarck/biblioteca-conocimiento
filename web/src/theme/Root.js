@@ -6,7 +6,7 @@ import { auth } from '../firebase';
 
 import {
   isTestInProgress,
-} from '@site/src/utils/courseProgress';
+} from '@site/src/utils/courseprogress';
 
 function isAuthRoute(pathname) {
   return pathname.includes('/login') || pathname.includes('/logout');
