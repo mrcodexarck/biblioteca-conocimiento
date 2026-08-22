@@ -12,7 +12,7 @@ function getStorageKey(courseId) {
   return `${STORAGE_PREFIX}${courseId}`;
 }
 
-export function getCourseProgress(courseId) {
+export function getCourseprogress(courseId) {
   const storage = getStorage();
 
   if (!storage) {
@@ -34,7 +34,7 @@ export function getCourseProgress(courseId) {
 }
 
 export function startCourseTest(courseId, totalQuestions) {
-  const current = getCourseProgress(courseId);
+  const current = getCourseprogress(courseId);
 
   if (current?.status === 'completed') {
     return current;

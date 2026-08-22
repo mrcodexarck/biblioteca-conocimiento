@@ -4,7 +4,7 @@ import {
   getCourseProgress,
   saveAnswer,
   startCourseTest,
-} from '@site/src/utils/courseProgress';
+} from '@site/src/utils/courseprogress';
 
 export default function Quiz({
   courseId,
@@ -20,7 +20,7 @@ export default function Quiz({
       return;
     }
 
-    const existing = getCourseProgress(courseId);
+    const existing = getCourseprogress(courseId);
 
     if (existing?.status === 'completed') {
       setProgress(existing);
