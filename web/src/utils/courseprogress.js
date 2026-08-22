@@ -12,7 +12,7 @@ function getStorageKey(courseId) {
   return `${STORAGE_PREFIX}${courseId}`;
 }
 
-export function getCourseprogress(courseId) {
+export function getcourseprogress(courseId) {
   const storage = getStorage();
 
   if (!storage) {
@@ -34,7 +34,7 @@ export function getCourseprogress(courseId) {
 }
 
 export function startCourseTest(courseId, totalQuestions) {
-  const current = getCourseprogress(courseId);
+  const current = getcourseprogress(courseId);
 
   if (current?.status === 'completed') {
     return current;
@@ -65,7 +65,7 @@ export function startCourseTest(courseId, totalQuestions) {
 
 export function saveAnswer(courseId, questionIndex, answerIndex, totalQuestions) {
   const current =
-    getCourseProgress(courseId) ??
+    getcourseprogress(courseId) ??
     startCourseTest(courseId, totalQuestions);
 
   const answers = [...(current.answers ?? [])];
@@ -114,7 +114,7 @@ export function completeCourseTest(courseId, questions, answers) {
     score: correctas,
     percentage,
     startedAt:
-      getCourseProgress(courseId)?.startedAt ??
+      getcourseprogress(courseId)?.startedAt ??
       new Date().toISOString(),
     completedAt: new Date().toISOString(),
   };
@@ -132,9 +132,9 @@ export function completeCourseTest(courseId, questions, answers) {
 }
 
 export function isTestInProgress(courseId) {
-  return getCourseProgress(courseId)?.status === 'in_progress';
+  return getcourseprogress(courseId)?.status === 'in_progress';
 }
 
 export function isTestCompleted(courseId) {
-  return getCourseProgress(courseId)?.status === 'completed';
+  return getcourseprogress(courseId)?.status === 'completed';
 }

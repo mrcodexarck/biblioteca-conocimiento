@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   completeCourseTest,
-  getCourseProgress,
+  getcourseprogress,
   saveAnswer,
   startCourseTest,
 } from '@site/src/utils/courseprogress';
@@ -20,7 +20,7 @@ export default function Quiz({
       return;
     }
 
-    const existing = getCourseprogress(courseId);
+    const existing = getcourseprogress(courseId);
 
     if (existing?.status === 'completed') {
       setProgress(existing);
