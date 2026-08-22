@@ -1,5 +1,5 @@
 ---
-title: Documentación de nómina
+title: Informacion sobre novedades
 description: Fórmulas, cálculos y procedimientos de soporte de nómina.
 ---
 

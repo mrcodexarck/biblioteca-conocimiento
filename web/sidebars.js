@@ -2,20 +2,29 @@ const sidebars = {
   documentacionSidebar: [
     {
       type: 'category',
-      label: 'contabilidad',
+      label: 'ISV',
       items: [
-        'isvleo/pruebasleo',
-        'nomina/contratos',
-        'nomina/novedades',
+        'documentacion/isvleo/pruebasleo',
+        'documentacion/isvleo/pruebasleo 2',
+        'documentacion/isvleo/pruebasleo 3',
       ],
     },
     {
       type: 'category',
-      label: 'nomina',
+      label: 'NOMINA',
       items: [
-        'nomina/calculos',
-        'nomina/contratos',
-        'nomina/novedades',
+        'documentacion/nomina/calculos',
+        'documentacion/nomina/contratos',
+        'documentacion/nomina/novedades',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'CONTABILIDAD',
+      items: [
+        'documentacion/contabilidadpablo/pruebaspablo',
+        'documentacion/contabilidadpablo/pruebaspablo2',
+        'documentacion/contabilidadpablo/pruebaspablo3',
       ],
     },
   ],

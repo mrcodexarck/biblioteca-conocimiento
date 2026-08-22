@@ -1,5 +1,5 @@
 ---
-title: Documentación contable
+title: Informacion sobre contratos
 description: Información y procedimientos de soporte contable.
 ---
 
