@@ -1,7 +1,7 @@
 ---
 sidebar_position: 3
 title: Evaluación final
-description: Evaluación de los conceptos trabajados en los módulos anteriores.
+description: Evaluación final del curso de contabilidad.
 ---
 
 import Quiz from '@site/src/components/Quiz';
@@ -10,12 +10,62 @@ import Quiz from '@site/src/components/Quiz';
 
 ¡Felicidades por llegar hasta aquí!
 
+Esta evaluación contiene varias preguntas sobre los contenidos trabajados durante el curso.
+
+> **Importante:** debes responder todas las preguntas antes de poder finalizar el test. Mientras la evaluación esté en progreso, los demás módulos del curso permanecerán bloqueados.
+
 <Quiz
-  pregunta="¿Cuál es una buena práctica al validar información contable?"
-  opciones={[
-    "Trabajar sin revisar los datos de entrada",
-    "Comparar los datos y documentar las diferencias encontradas",
-    "Cambiar valores hasta que el resultado parezca correcto"
+  courseId="curso-contabilidad"
+  preguntas={[
+    {
+      id: 'contabilidad-01',
+      pregunta: '¿Cuál es una buena práctica al validar información contable?',
+      opciones: [
+        'Trabajar sin revisar los datos de entrada',
+        'Comparar los datos y documentar las diferencias encontradas',
+        'Cambiar valores hasta que el resultado parezca correcto',
+      ],
+      correcta: 1,
+    },
+    {
+      id: 'contabilidad-02',
+      pregunta: '¿Qué se debe hacer cuando se encuentra una diferencia contable?',
+      opciones: [
+        'Ignorarla',
+        'Eliminar el registro',
+        'Revisarla y documentar su causa',
+      ],
+      correcta: 2,
+    },
+    {
+      id: 'contabilidad-03',
+      pregunta: '¿Qué información es importante conservar durante una validación?',
+      opciones: [
+        'Los datos originales y las diferencias encontradas',
+        'Solamente el resultado final',
+        'Ninguna información',
+      ],
+      correcta: 0,
+    },
+    {
+      id: 'contabilidad-04',
+      pregunta: '¿Por qué es importante documentar una diferencia?',
+      opciones: [
+        'Para evitar volver a revisar el proceso',
+        'Para mantener trazabilidad y facilitar futuras revisiones',
+        'Para eliminar la necesidad de validar datos',
+      ],
+      correcta: 1,
+    },
+    {
+      id: 'contabilidad-05',
+      pregunta: '¿Cuál es una característica de un proceso contable bien documentado?',
+      opciones: [
+        'No tiene evidencias',
+        'Depende únicamente de la memoria del usuario',
+        'Permite entender qué se hizo y por qué',
+      ],
+      correcta: 2,
+    },
   ]}
-  correcta={1}
 />

@@ -19,6 +19,14 @@ const cursos = [
     icono: '🧾',
     enlace: '/docs/cursos/curso-nomina/bienvenida',
   },
+  {
+    id: 'isv',
+    titulo: 'Curso de ISV',
+    descripcion: 'Aprende los fundamentos y desarrolla ejercicios prácticos de ISV.',
+    etiqueta: 'Administrativo',
+    icono: '💼',
+    enlace: '/docs/cursos/curso-isv/modulo-uno',
+  },
 ];
 
 export default function Cursos() {
