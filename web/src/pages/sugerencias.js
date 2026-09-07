@@ -5,14 +5,12 @@ import {
   doc,
   getDoc,
   getDocs,
-  runTransaction,
   serverTimestamp,
   setDoc,
   updateDoc,
 } from 'firebase/firestore';
 
 import { auth, db } from '../firebase';
-
 import '../css/suggestions.css';
 
 const STATUS = {
@@ -33,26 +31,12 @@ const STATUS_EMOJIS = {
   [STATUS.REJECTED]: '🔴',
 };
 
-const CATEGORIES = [
-  'Funcionalidad',
-  'Mejora',
-  'Otro',
-];
-
-const EMPTY_FORM = {
-  title: '',
-  description: '',
-  category: 'Funcionalidad',
-};
+const CATEGORIES = ['Funcionalidad', 'Mejora', 'Otro'];
+const EMPTY_FORM = { title: '', description: '', category: 'Funcionalidad' };
 
 function formatDate(timestamp) {
-  if (!timestamp?.toDate) {
-    return 'Fecha pendiente';
-  }
-
-  return new Intl.DateTimeFormat('es-CO', {
-    dateStyle: 'medium',
-  }).format(timestamp.toDate());
+  if (!timestamp?.toDate) return 'Fecha pendiente';
+  return new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' }).format(timestamp.toDate());
 }
 
 function getStatusLabel(status) {
@@ -79,30 +63,19 @@ export default function Sugerencias() {
   const [formMessage, setFormMessage] = useState('');
   const [formError, setFormError] = useState('');
 
-  const [votedSuggestions, setVotedSuggestions] = useState({});
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminLoading, setAdminLoading] = useState(true);
-
-  const currentUser = auth.currentUser;
 
   async function loadSuggestions() {
     setLoading(true);
     setError('');
-
     try {
       const snapshot = await getDocs(collection(db, 'suggestions'));
-
-      const data = snapshot.docs.map((item) => ({
-        id: item.id,
-        ...item.data(),
-      }));
-
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setSuggestions(data);
-    } catch (loadError) {
-      console.error(loadError);
-      setError(
-        'No pudimos cargar las sugerencias. Revisa tu conexión e inténtalo nuevamente.',
-      );
+    } catch (err) {
+      console.error(err);
+      setError('No pudimos cargar las sugerencias. Revisa tu conexión.');
     } finally {
       setLoading(false);
     }
@@ -110,62 +83,18 @@ export default function Sugerencias() {
 
   async function loadUserState() {
     setAdminLoading(true);
-
     try {
       const user = auth.currentUser;
-
-      if (!user) {
-        setIsAdmin(false);
-        return;
-      }
-
+      if (!user) { setIsAdmin(false); return; }
       const userProfileRef = doc(db, 'users', user.uid);
-      const userProfileSnapshot = await getDoc(userProfileRef);
-
-      setIsAdmin(
-        userProfileSnapshot.exists() &&
-          userProfileSnapshot.data()?.role === 'admin',
-      );
-    } catch (profileError) {
-      console.error(profileError);
+      const snapshot = await getDoc(userProfileRef);
+      setIsAdmin(snapshot.exists() && snapshot.data()?.role === 'admin');
+    } catch (err) {
+      console.error(err);
       setIsAdmin(false);
     } finally {
       setAdminLoading(false);
     }
-  }
-
-  async function loadVotes() {
-    const user = auth.currentUser;
-
-    if (!user) {
-      setVotedSuggestions({});
-      return;
-    }
-
-    const voteState = {};
-
-    await Promise.all(
-      suggestions.map(async (suggestion) => {
-        try {
-          const voteRef = doc(
-            db,
-            'suggestions',
-            suggestion.id,
-            'votes',
-            user.uid,
-          );
-
-          const voteSnapshot = await getDoc(voteRef);
-
-          voteState[suggestion.id] = voteSnapshot.exists();
-        } catch (voteError) {
-          console.error(voteError);
-          voteState[suggestion.id] = false;
-        }
-      }),
-    );
-
-    setVotedSuggestions(voteState);
   }
 
   useEffect(() => {
@@ -173,391 +102,159 @@ export default function Sugerencias() {
     loadUserState();
   }, []);
 
-  useEffect(() => {
-    if (suggestions.length > 0) {
-      loadVotes();
-    } else {
-      setVotedSuggestions({});
-    }
-  }, [suggestions]);
-
   const filteredSuggestions = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
-
-    const result = suggestions.filter((suggestion) => {
-      const matchesSearch =
+    const result = suggestions.filter((s) => {
+      const matchSearch =
         !normalizedSearch ||
-        String(suggestion.title || '')
-          .toLowerCase()
-          .includes(normalizedSearch) ||
-        String(suggestion.description || '')
-          .toLowerCase()
-          .includes(normalizedSearch);
-
-      const matchesStatus =
-        statusFilter === 'all' || suggestion.status === statusFilter;
-
-      const matchesCategory =
-        categoryFilter === 'all' ||
-        suggestion.category === categoryFilter;
-
-      return matchesSearch && matchesStatus && matchesCategory;
+        (s.title || '').toLowerCase().includes(normalizedSearch) ||
+        (s.description || '').toLowerCase().includes(normalizedSearch);
+      const matchStatus = statusFilter === 'all' || s.status === statusFilter;
+      const matchCategory = categoryFilter === 'all' || s.category === categoryFilter;
+      return matchSearch && matchStatus && matchCategory;
     });
 
     result.sort((a, b) => {
-      if (sortMode === 'votes') {
-        return Number(b.votesCount || 0) - Number(a.votesCount || 0);
-      }
-
       if (sortMode === 'comments') {
-        return (
-          Number(b.commentsCount || 0) -
-          Number(a.commentsCount || 0)
-        );
+        return (b.commentsCount || 0) - (a.commentsCount || 0);
       }
-
+      // sortMode === 'recent'
       const aDate = a.createdAt?.toMillis?.() || 0;
       const bDate = b.createdAt?.toMillis?.() || 0;
-
       return bDate - aDate;
     });
-
     return result;
-  }, [
-    suggestions,
-    search,
-    statusFilter,
-    categoryFilter,
-    sortMode,
-  ]);
+  }, [suggestions, search, statusFilter, categoryFilter, sortMode]);
 
   const stats = useMemo(() => {
-    return {
-      total: suggestions.length,
-      review: suggestions.filter(
-        (item) => item.status === STATUS.REVIEW,
-      ).length,
-      approved: suggestions.filter(
-        (item) =>
-          item.status === STATUS.APPROVED ||
-          item.status === STATUS.IN_PROGRESS ||
-          item.status === STATUS.COMPLETED,
-      ).length,
-      votes: suggestions.reduce(
-        (total, item) => total + Number(item.votesCount || 0),
-        0,
-      ),
-    };
+    const total = suggestions.length;
+    const pending = suggestions.filter(s => s.status === STATUS.PENDING).length;
+    const approved = suggestions.filter(s => s.status === STATUS.APPROVED).length;
+    const rejected = suggestions.filter(s => s.status === STATUS.REJECTED).length;
+    return { total, pending, approved, rejected };
   }, [suggestions]);
 
-  const handleFormChange = (event) => {
-    const { name, value } = event.target;
-
-    setForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
-
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
     setFormMessage('');
     setFormError('');
   };
 
-  const handleCreateSuggestion = async (event) => {
-    event.preventDefault();
-
-    if (loadingAction) {
-      return;
-    }
-
+  const handleCreateSuggestion = async (e) => {
+    e.preventDefault();
+    if (loadingAction) return;
     setFormMessage('');
     setFormError('');
 
     const user = auth.currentUser;
-
     if (!user) {
-      setFormError(
-        'Debes iniciar sesión para crear una sugerencia.',
-      );
+      setFormError('Debes iniciar sesión para crear una sugerencia.');
       return;
     }
 
-    const title = form.title.trim();
-    const description = form.description.trim();
-    const category = form.category.trim();
+    const { title, description, category } = form;
+    const trimmedTitle = title.trim();
+    const trimmedDesc = description.trim();
 
-    if (!title) {
-      setFormError('Escribe un título para la sugerencia.');
-      return;
-    }
-
-    if (title.length < 5) {
-      setFormError('El título debe tener al menos 5 caracteres.');
-      return;
-    }
-
-    if (title.length > 120) {
-      setFormError(
-        'El título no puede superar los 120 caracteres.',
-      );
-      return;
-    }
-
-    if (!description) {
-      setFormError('Escribe una descripción.');
-      return;
-    }
-
-    if (description.length < 15) {
-      setFormError(
-        'La descripción debe tener al menos 15 caracteres.',
-      );
-      return;
-    }
-
-    if (description.length > 2000) {
-      setFormError(
-        'La descripción no puede superar los 2000 caracteres.',
-      );
-      return;
-    }
-
-    if (!category) {
-      setFormError('Selecciona una categoría.');
-      return;
-    }
+    if (!trimmedTitle) return setFormError('Escribe un título.');
+    if (trimmedTitle.length < 5) return setFormError('El título debe tener al menos 5 caracteres.');
+    if (trimmedTitle.length > 120) return setFormError('El título no puede superar los 120 caracteres.');
+    if (!trimmedDesc) return setFormError('Escribe una descripción.');
+    if (trimmedDesc.length < 15) return setFormError('La descripción debe tener al menos 15 caracteres.');
+    if (trimmedDesc.length > 2000) return setFormError('La descripción no puede superar los 2000 caracteres.');
+    if (!category) return setFormError('Selecciona una categoría.');
 
     setLoadingAction(true);
-
     try {
-      const suggestionRef = doc(collection(db, 'suggestions'));
-
-      await setDoc(suggestionRef, {
-        title,
-        description,
+      const ref = doc(collection(db, 'suggestions'));
+      await setDoc(ref, {
+        title: trimmedTitle,
+        description: trimmedDesc,
         category,
         status: STATUS.PENDING,
         authorId: user.uid,
-        authorName:
-          user.displayName ||
-          user.email?.split('@')[0] ||
-          'Usuario',
+        authorName: user.displayName || user.email?.split('@')[0] || 'Usuario',
         authorEmail: user.email || '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        votesCount: 0,
         commentsCount: 0,
       });
-
       setForm(EMPTY_FORM);
-      setFormMessage(
-        'Tu sugerencia fue enviada correctamente y quedó pendiente de revisión.',
-      );
-
+      setFormMessage('¡Sugerencia enviada! Queda pendiente de revisión.');
       await loadSuggestions();
-
       setTimeout(() => {
         setShowForm(false);
         setFormMessage('');
       }, 1200);
-    } catch (createError) {
-      console.error(createError);
-
-      setFormError(
-        'No pudimos guardar la sugerencia. Inténtalo nuevamente.',
-      );
+    } catch (err) {
+      console.error(err);
+      setFormError('No pudimos guardar la sugerencia. Inténtalo de nuevo.');
     } finally {
       setLoadingAction(false);
     }
   };
 
-  const toggleVote = async (suggestion) => {
-    const user = auth.currentUser;
-
-    if (!user) {
-      window.alert(
-        'Debes iniciar sesión para votar una sugerencia.',
-      );
-      return;
-    }
-
-    if (loadingAction) {
-      return;
-    }
-
+  const changeSuggestionStatus = async (suggestionId, newStatus) => {
+    if (!isAdmin || loadingAction) return;
     setLoadingAction(true);
-
     try {
-      const suggestionRef = doc(
-        db,
-        'suggestions',
-        suggestion.id,
-      );
-
-      const voteRef = doc(
-        db,
-        'suggestions',
-        suggestion.id,
-        'votes',
-        user.uid,
-      );
-
-      await runTransaction(db, async (transaction) => {
-        const suggestionSnapshot =
-          await transaction.get(suggestionRef);
-
-        if (!suggestionSnapshot.exists()) {
-          throw new Error('La sugerencia no existe.');
-        }
-
-        const voteSnapshot = await transaction.get(voteRef);
-
-        const currentCount = Number(
-          suggestionSnapshot.data()?.votesCount || 0,
-        );
-
-        if (voteSnapshot.exists()) {
-          transaction.delete(voteRef);
-
-          transaction.update(suggestionRef, {
-            votesCount: Math.max(currentCount - 1, 0),
-            updatedAt: serverTimestamp(),
-          });
-        } else {
-          transaction.set(voteRef, {
-            userId: user.uid,
-            createdAt: serverTimestamp(),
-          });
-
-          transaction.update(suggestionRef, {
-            votesCount: currentCount + 1,
-            updatedAt: serverTimestamp(),
-          });
-        }
-      });
-
-      await loadSuggestions();
-    } catch (voteError) {
-      console.error(voteError);
-
-      window.alert(
-        'No pudimos actualizar tu voto. Inténtalo nuevamente.',
-      );
-    } finally {
-      setLoadingAction(false);
-    }
-  };
-
-  const changeSuggestionStatus = async (
-    suggestionId,
-    nextStatus,
-  ) => {
-    if (!isAdmin || loadingAction) {
-      return;
-    }
-
-    setLoadingAction(true);
-
-    try {
-      const suggestionRef = doc(
-        db,
-        'suggestions',
-        suggestionId,
-      );
-
-      await updateDoc(suggestionRef, {
-        status: nextStatus,
+      const ref = doc(db, 'suggestions', suggestionId);
+      await updateDoc(ref, {
+        status: newStatus,
         updatedAt: serverTimestamp(),
       });
-
       await loadSuggestions();
-    } catch (statusError) {
-      console.error(statusError);
-
-      window.alert(
-        'No pudimos actualizar el estado de la sugerencia.',
-      );
+    } catch (err) {
+      console.error(err);
+      window.alert('No se pudo actualizar el estado.');
     } finally {
       setLoadingAction(false);
     }
   };
 
   return (
-    <Layout
-      title="Sugerencias"
-      description="Comparte ideas y sugerencias para mejorar la Biblioteca de Conocimiento"
-    >
+    <Layout title="Sugerencias" description="Comparte ideas para mejorar la Biblioteca">
       <main className="suggestions-page">
         <div className="container margin-vert--xl">
-
           <header className="suggestions-hero">
-            <span className="auth-eyebrow">
-              BIBLIOTECA DE CONOCIMIENTO
-            </span>
-
+            <span className="auth-eyebrow">BIBLIOTECA DE CONOCIMIENTO</span>
             <h1>¿Y si tu próxima idea cambia todo?</h1>
-
             <p>
-              Comparte tus ideas, vota por las propuestas que más
-              aportan y ayúdanos a mejorar la experiencia del equipo.
+              Comparte tus ideas, vota por las propuestas que más aportan y ayúdanos a mejorar la experiencia del equipo.
             </p>
           </header>
 
-          <section
-            className="suggestions-stats"
-            aria-label="Estadísticas de sugerencias"
-          >
+          <section className="suggestions-stats" aria-label="Estadísticas">
             <article className="suggestions-stat card">
-              <span className="suggestions-stat__value">
-                {stats.total}
-              </span>
-              <span className="suggestions-stat__label">
-                Sugerencias
-              </span>
+              <span className="suggestions-stat__value">{stats.total}</span>
+              <span className="suggestions-stat__label">Sugerencias</span>
             </article>
-
             <article className="suggestions-stat card">
-              <span className="suggestions-stat__value">
-                {stats.review}
-              </span>
-              <span className="suggestions-stat__label">
-                En revisión
-              </span>
+              <span className="suggestions-stat__value">{stats.pending}</span>
+              <span className="suggestions-stat__label">Pendientes</span>
             </article>
-
             <article className="suggestions-stat card">
-              <span className="suggestions-stat__value">
-                {stats.approved}
-              </span>
-              <span className="suggestions-stat__label">
-                Aprobadas
-              </span>
+              <span className="suggestions-stat__value">{stats.approved}</span>
+              <span className="suggestions-stat__label">Aprobadas</span>
             </article>
-
             <article className="suggestions-stat card">
-              <span className="suggestions-stat__value">
-                {stats.votes}
-              </span>
-              <span className="suggestions-stat__label">
-                Votos
-              </span>
+              <span className="suggestions-stat__value">{stats.rejected}</span>
+              <span className="suggestions-stat__label">Rechazadas</span>
             </article>
           </section>
 
           <section className="suggestions-toolbar">
             <div className="suggestions-search">
-              <label htmlFor="suggestions-search">
-                Buscar sugerencias
-              </label>
-
+              <label htmlFor="suggestions-search">Buscar sugerencias</label>
               <input
                 id="suggestions-search"
                 type="search"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="Busca por título o descripción..."
               />
             </div>
-
             <button
               className="button button--primary"
               type="button"
@@ -573,124 +270,59 @@ export default function Sugerencias() {
 
           <section className="suggestions-filters">
             <div className="suggestions-filter-group">
-              <label htmlFor="suggestions-sort">
-                Ordenar
-              </label>
-
+              <label htmlFor="suggestions-sort">Ordenar</label>
               <select
                 id="suggestions-sort"
                 value={sortMode}
-                onChange={(event) =>
-                  setSortMode(event.target.value)
-                }
+                onChange={(e) => setSortMode(e.target.value)}
               >
                 <option value="recent">Más recientes</option>
-                <option value="votes">Más votadas</option>
-                <option value="comments">
-                  Más comentadas
-                </option>
+                <option value="comments">Más comentadas</option>
               </select>
             </div>
 
             <div className="suggestions-filter-group">
-              <label htmlFor="suggestions-status">
-                Estado
-              </label>
-
+              <label htmlFor="suggestions-status">Estado</label>
               <select
                 id="suggestions-status"
                 value={statusFilter}
-                onChange={(event) =>
-                  setStatusFilter(event.target.value)
-                }
+                onChange={(e) => setStatusFilter(e.target.value)}
               >
                 <option value="all">Todos</option>
-                <option value={STATUS.PENDING}>
-                  Pendientes
-                </option>
-                <option value={STATUS.REVIEW}>
-                  En revisión
-                </option>
-                <option value={STATUS.APPROVED}>
-                  Aprobadas
-                </option>
-                <option value={STATUS.IN_PROGRESS}>
-                  En desarrollo
-                </option>
-                <option value={STATUS.COMPLETED}>
-                  Completadas
-                </option>
-                <option value={STATUS.REJECTED}>
-                  Rechazadas
-                </option>
+                <option value={STATUS.PENDING}>Pendientes</option>
+                <option value={STATUS.APPROVED}>Aprobadas</option>
+                <option value={STATUS.REJECTED}>Rechazadas</option>
               </select>
             </div>
 
             <div className="suggestions-filter-group">
-              <label htmlFor="suggestions-category">
-                Categoría
-              </label>
-
+              <label htmlFor="suggestions-category">Categoría</label>
               <select
                 id="suggestions-category"
                 value={categoryFilter}
-                onChange={(event) =>
-                  setCategoryFilter(event.target.value)
-                }
+                onChange={(e) => setCategoryFilter(e.target.value)}
               >
                 <option value="all">Todas</option>
-
-                {CATEGORIES.map((category) => (
-                  <option
-                    value={category}
-                    key={category}
-                  >
-                    {category}
-                  </option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
             </div>
           </section>
 
-          {error && (
-            <div
-              className="alert alert--danger"
-              role="alert"
-            >
-              {error}
-            </div>
-          )}
+          {error && <div className="alert alert--danger" role="alert">{error}</div>}
 
-          <section
-            className="suggestions-list"
-            aria-label="Listado de sugerencias"
-          >
+          <section className="suggestions-list" aria-label="Listado">
             {loading ? (
               <div className="suggestions-empty card">
-                <div
-                  className="suggestions-spinner"
-                  aria-hidden="true"
-                />
+                <div className="suggestions-spinner" aria-hidden="true" />
                 <h2>Cargando sugerencias...</h2>
-                <p>
-                  Estamos consultando las ideas disponibles.
-                </p>
+                <p>Estamos consultando las ideas disponibles.</p>
               </div>
             ) : filteredSuggestions.length === 0 ? (
               <div className="suggestions-empty card">
-                <div
-                  className="suggestions-empty__icon"
-                  aria-hidden="true"
-                >
-                  💡
-                </div>
-
-                <h2>
-                  {suggestions.length === 0
-                    ? 'Todavía no hay sugerencias'
-                    : 'No encontramos resultados'}
-                </h2>
-
+                <div className="suggestions-empty__icon" aria-hidden="true">💡</div>
+                <h2>{suggestions.length === 0 ? 'Todavía no hay sugerencias' : 'No encontramos resultados'}</h2>
                 <p>
                   {suggestions.length === 0
                     ? 'Sé la primera persona en compartir una idea.'
@@ -698,173 +330,72 @@ export default function Sugerencias() {
                 </p>
               </div>
             ) : (
-              filteredSuggestions.map((suggestion) => {
-                const hasVoted =
-                  votedSuggestions[suggestion.id] === true;
+              filteredSuggestions.map((suggestion) => (
+                <article className="suggestions-card card" key={suggestion.id}>
+                  <div className="suggestions-card__body">
+                    <div className="suggestions-card__top">
+                      <div>
+                        <span className="badge badge--secondary">
+                          {suggestion.category || 'General'}
+                        </span>
+                        <h2>{suggestion.title}</h2>
+                      </div>
+                      <span className={`suggestions-status suggestions-status--${suggestion.status}`}>
+                        {getStatusEmoji(suggestion.status)} {getStatusLabel(suggestion.status)}
+                      </span>
+                    </div>
 
-                return (
-                  <article
-                    className="suggestions-card card"
-                    key={suggestion.id}
-                  >
-                    <div className="suggestions-card__body">
-                      <div className="suggestions-card__top">
-                        <div>
-                          <span className="badge badge--secondary">
-                            {suggestion.category || 'General'}
-                          </span>
+                    <p className="suggestions-card__description">{suggestion.description}</p>
 
-                          <h2>{suggestion.title}</h2>
-                        </div>
-
-                        <span
-                          className={`suggestions-status suggestions-status--${suggestion.status}`}
-                        >
-                          {getStatusEmoji(suggestion.status)}{' '}
-                          {getStatusLabel(suggestion.status)}
+                    <div className="suggestions-card__footer">
+                      <div className="suggestions-card__meta">
+                        <span>Propuesta por <strong>{suggestion.authorName || 'Usuario'}</strong></span>
+                        <span>{formatDate(suggestion.createdAt)}</span>
+                      </div>
+                      <div className="suggestions-card__actions">
+                        <span className="suggestions-comments">
+                          💬 {Number(suggestion.commentsCount || 0)}
                         </span>
                       </div>
+                    </div>
 
-                      <p className="suggestions-card__description">
-                        {suggestion.description}
-                      </p>
-
-                      <div className="suggestions-card__footer">
-                        <div className="suggestions-card__meta">
-                          <span>
-                            Propuesta por{' '}
-                            <strong>
-                              {suggestion.authorName ||
-                                'Usuario'}
-                            </strong>
-                          </span>
-
-                          <span>
-                            {formatDate(suggestion.createdAt)}
-                          </span>
+                    {isAdmin && !adminLoading && (
+                      <div className="suggestions-admin">
+                        <div>
+                          <strong>Administración</strong>
+                          <span>Solo visible para administradores.</span>
                         </div>
-
-                        <div className="suggestions-card__actions">
+                        <div className="suggestions-admin__actions">
                           <button
                             type="button"
-                            className={`suggestions-vote ${
-                              hasVoted
-                                ? 'suggestions-vote--active'
-                                : ''
-                            }`}
-                            onClick={() =>
-                              toggleVote(suggestion)
-                            }
-                            disabled={
-                              loadingAction ||
-                              adminLoading
-                            }
-                            aria-pressed={hasVoted}
+                            className="button button--sm button--outline"
+                            onClick={() => changeSuggestionStatus(suggestion.id, STATUS.PENDING)}
+                            disabled={suggestion.status === STATUS.PENDING}
                           >
-                            {hasVoted
-                              ? '✓ Votaste'
-                              : '👍 Votar'}
-
-                            <span>
-                              {Number(
-                                suggestion.votesCount || 0,
-                              )}
-                            </span>
+                            Pendiente
                           </button>
-
-                          <span className="suggestions-comments">
-                            💬{' '}
-                            {Number(
-                              suggestion.commentsCount || 0,
-                            )}
-                          </span>
+                          <button
+                            type="button"
+                            className="button button--sm button--primary"
+                            onClick={() => changeSuggestionStatus(suggestion.id, STATUS.APPROVED)}
+                            disabled={suggestion.status === STATUS.APPROVED}
+                          >
+                            Aprobar
+                          </button>
+                          <button
+                            type="button"
+                            className="button button--sm button--outline"
+                            onClick={() => changeSuggestionStatus(suggestion.id, STATUS.REJECTED)}
+                            disabled={suggestion.status === STATUS.REJECTED}
+                          >
+                            Rechazar
+                          </button>
                         </div>
                       </div>
-
-                      {isAdmin && !adminLoading && (
-                        <div className="suggestions-admin">
-                          <div>
-                            <strong>
-                              Administración
-                            </strong>
-
-                            <span>
-                              Solo visible para administradores.
-                            </span>
-                          </div>
-
-                          <div className="suggestions-admin__actions">
-                            <button
-                              type="button"
-                              className="button button--sm button--outline"
-                              onClick={() =>
-                                changeSuggestionStatus(
-                                  suggestion.id,
-                                  STATUS.REVIEW,
-                                )
-                              }
-                            >
-                              Revisar
-                            </button>
-
-                            <button
-                              type="button"
-                              className="button button--sm button--primary"
-                              onClick={() =>
-                                changeSuggestionStatus(
-                                  suggestion.id,
-                                  STATUS.APPROVED,
-                                )
-                              }
-                            >
-                              Aprobar
-                            </button>
-
-                            <button
-                              type="button"
-                              className="button button--sm button--outline"
-                              onClick={() =>
-                                changeSuggestionStatus(
-                                  suggestion.id,
-                                  STATUS.IN_PROGRESS,
-                                )
-                              }
-                            >
-                              En desarrollo
-                            </button>
-
-                            <button
-                              type="button"
-                              className="button button--sm button--primary"
-                              onClick={() =>
-                                changeSuggestionStatus(
-                                  suggestion.id,
-                                  STATUS.COMPLETED,
-                                )
-                              }
-                            >
-                              Completar
-                            </button>
-
-                            <button
-                              type="button"
-                              className="button button--sm button--outline"
-                              onClick={() =>
-                                changeSuggestionStatus(
-                                  suggestion.id,
-                                  STATUS.REJECTED,
-                                )
-                              }
-                            >
-                              Rechazar
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                );
-              })
+                    )}
+                  </div>
+                </article>
+              ))
             )}
           </section>
         </div>
@@ -881,48 +412,26 @@ export default function Sugerencias() {
             type="button"
             className="suggestions-modal__backdrop"
             aria-label="Cerrar formulario"
-            onClick={() => {
-              if (!loadingAction) {
-                setShowForm(false);
-              }
-            }}
+            onClick={() => !loadingAction && setShowForm(false)}
           />
-
           <div className="suggestions-modal__content card">
             <header className="suggestions-modal__header">
               <div>
-                <span className="auth-eyebrow">
-                  NUEVA PROPUESTA
-                </span>
-
-                <h2 id="suggestions-modal-title">
-                  Comparte tu idea
-                </h2>
+                <span className="auth-eyebrow">NUEVA PROPUESTA</span>
+                <h2 id="suggestions-modal-title">Comparte tu idea</h2>
               </div>
-
               <button
                 type="button"
                 className="suggestions-modal__close"
-                onClick={() => {
-                  if (!loadingAction) {
-                    setShowForm(false);
-                  }
-                }}
+                onClick={() => !loadingAction && setShowForm(false)}
                 aria-label="Cerrar"
               >
                 ×
               </button>
             </header>
-
-            <form
-              className="suggestions-form"
-              onSubmit={handleCreateSuggestion}
-            >
+            <form className="suggestions-form" onSubmit={handleCreateSuggestion}>
               <div className="suggestions-field">
-                <label htmlFor="suggestion-title">
-                  Título
-                </label>
-
+                <label htmlFor="suggestion-title">Título</label>
                 <input
                   id="suggestion-title"
                   name="title"
@@ -934,12 +443,8 @@ export default function Sugerencias() {
                   disabled={loadingAction}
                 />
               </div>
-
               <div className="suggestions-field">
-                <label htmlFor="suggestion-category">
-                  Categoría
-                </label>
-
+                <label htmlFor="suggestion-category">Categoría</label>
                 <select
                   id="suggestion-category"
                   name="category"
@@ -947,22 +452,13 @@ export default function Sugerencias() {
                   onChange={handleFormChange}
                   disabled={loadingAction}
                 >
-                  {CATEGORIES.map((category) => (
-                    <option
-                      value={category}
-                      key={category}
-                    >
-                      {category}
-                    </option>
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
               </div>
-
               <div className="suggestions-field">
-                <label htmlFor="suggestion-description">
-                  Descripción
-                </label>
-
+                <label htmlFor="suggestion-description">Descripción</label>
                 <textarea
                   id="suggestion-description"
                   name="description"
@@ -975,46 +471,20 @@ export default function Sugerencias() {
                 />
               </div>
 
-              {formError && (
-                <div
-                  className="alert alert--danger"
-                  role="alert"
-                >
-                  {formError}
-                </div>
-              )}
-
-              {formMessage && (
-                <div
-                  className="alert alert--success"
-                  role="status"
-                >
-                  {formMessage}
-                </div>
-              )}
+              {formError && <div className="alert alert--danger" role="alert">{formError}</div>}
+              {formMessage && <div className="alert alert--success" role="status">{formMessage}</div>}
 
               <div className="suggestions-form__actions">
                 <button
                   type="button"
                   className="button button--outline"
-                  onClick={() => {
-                    if (!loadingAction) {
-                      setShowForm(false);
-                    }
-                  }}
+                  onClick={() => !loadingAction && setShowForm(false)}
                   disabled={loadingAction}
                 >
                   Cancelar
                 </button>
-
-                <button
-                  type="submit"
-                  className="button button--primary"
-                  disabled={loadingAction}
-                >
-                  {loadingAction
-                    ? 'Enviando…'
-                    : 'Enviar sugerencia'}
+                <button type="submit" className="button button--primary" disabled={loadingAction}>
+                  {loadingAction ? 'Enviando…' : 'Enviar sugerencia'}
                 </button>
               </div>
             </form>
