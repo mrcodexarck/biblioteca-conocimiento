@@ -414,115 +414,122 @@ export default function Sugerencias() {
                 const currentMsgText = messageText[suggestion.id] || '';
 
                 return (
-                  <article className="suggestions-card card" key={suggestion.id}>
-                    <div className="suggestions-card__body">
-                      <div className="suggestions-card__top">
-                        <div>
-                          <span className="badge badge--secondary">
-                            {suggestion.category || 'General'}
-                          </span>
-                          <h2>{suggestion.title}</h2>
-                        </div>
-                        <span className={`suggestions-status suggestions-status--${suggestion.status}`}>
-                          {getStatusEmoji(suggestion.status)} {getStatusLabel(suggestion.status)}
-                        </span>
-                      </div>
+                    <article className="suggestions-card card" key={suggestion.id}>
+  <div className="suggestions-card__body">
+    {/* Cabecera */}
+    <div className="suggestions-card__top">
+      <div>
+        <span className="badge badge--secondary">
+          {suggestion.category || 'General'}
+        </span>
+        <h2>{suggestion.title}</h2>
+      </div>
+      <span className={`suggestions-status suggestions-status--${suggestion.status}`}>
+        {getStatusEmoji(suggestion.status)} {getStatusLabel(suggestion.status)}
+      </span>
+    </div>
 
-                      <p className="suggestions-card__description">{suggestion.description}</p>
+    {/* Descripción */}
+    <p className="suggestions-card__description">{suggestion.description}</p>
 
-                      <div className="suggestions-card__footer">
-                        <div className="suggestions-card__meta">
-                          <span>Propuesta por <strong>{suggestion.authorName || 'Usuario'}</strong></span>
-                          <span>{formatDate(suggestion.createdAt)}</span>
-                        </div>
-                      </div>
+    {/* Footer: autor, fecha y botón de mensajes */}
+    <div className="suggestions-card__footer">
+      <div className="suggestions-card__meta">
+        <span>Propuesta por <strong>{suggestion.authorName || 'Usuario'}</strong></span>
+        <span>{formatDate(suggestion.createdAt)}</span>
+      </div>
 
-                      {/* Panel de administración: solo visible si la sugerencia está pendiente y es admin */}
-                      {isAdmin && !adminLoading && isPending && (
-                        <div className="suggestions-admin">
-                          <div>
-                            <strong>Administración</strong>
-                            <span>Cambiar estado de la sugerencia:</span>
-                          </div>
-                          <div className="suggestions-admin__actions">
-                            <button
-                              type="button"
-                              className="button button--sm button-approve"
-                              onClick={() => changeSuggestionStatus(suggestion.id, STATUS.APPROVED)}
-                              disabled={!isPending}
-                            >
-                              Aprobar
-                            </button>
-                            <button
-                              type="button"
-                              className="button button--sm button-reject"
-                              onClick={() => changeSuggestionStatus(suggestion.id, STATUS.REJECTED)}
-                              disabled={!isPending}
-                            >
-                              Rechazar
-                            </button>
-                            <button
-                              type="button"
-                              className="button button--sm button-messages"
-                              onClick={() => toggleMessages(suggestion.id)}
-                            >
-                              {isExpanded ? 'Cerrar' : 'Responder'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
+      {/* Botón de mensajes visible para todos los autenticados */}
+      {auth.currentUser && (
+        <button
+          className="button button--sm button-messages"
+          onClick={() => toggleMessages(suggestion.id)}
+        >
+          {isExpanded ? 'Ocultar respuestas' : 'Ver respuestas'} ({msgList.length})
+        </button>
+      )}
+    </div>
 
-                      {/* Mensaje de estado fijo (aprobado/rechazado) para admin */}
-                      {isAdmin && !adminLoading && !isPending && (
-                        <div className="suggestions-admin suggestions-admin--fixed">
-                          <strong>🔒 Estado definitivo</strong>
-                          <span>Esta sugerencia ya fue {suggestion.status === STATUS.APPROVED ? 'aprobada' : 'rechazada'} y no se puede modificar.</span>
-                        </div>
-                      )}
+    {/* Panel de administración: solo para admin en sugerencias pendientes */}
+    {isAdmin && !adminLoading && isPending && (
+      <div className="suggestions-admin">
+        <div>
+          <strong>Administración</strong>
+          <span>Cambiar estado de la sugerencia:</span>
+        </div>
+        <div className="suggestions-admin__actions">
+          <button
+            type="button"
+            className="button button--sm button-approve"
+            onClick={() => changeSuggestionStatus(suggestion.id, STATUS.APPROVED)}
+            disabled={!isPending}
+          >
+            Aprobar
+          </button>
+          <button
+            type="button"
+            className="button button--sm button-reject"
+            onClick={() => changeSuggestionStatus(suggestion.id, STATUS.REJECTED)}
+            disabled={!isPending}
+          >
+            Rechazar
+          </button>
+        </div>
+      </div>
+    )}
 
-                      {/* Panel de mensajes (visible para todos cuando está expandido) */}
-                      {isExpanded && (
-                        <div className="suggestions-messages-panel">
-                          {isLoadingMsgs ? (
-                            <p className="suggestions-messages-loading">Cargando mensajes...</p>
-                          ) : msgList.length === 0 ? (
-                            <p className="suggestions-messages-empty">No hay mensajes aún.</p>
-                          ) : (
-                            <ul className="suggestions-messages-list">
-                              {msgList.map((msg) => (
-                                <li key={msg.id} className="suggestions-message-item">
-                                  <div className="suggestions-message-author">
-                                    <strong>{msg.authorName || 'Admin'}</strong>
-                                    <span>{formatDate(msg.createdAt)}</span>
-                                  </div>
-                                  <p className="suggestions-message-text">{msg.text}</p>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
+    {/* Mensaje de estado fijo para admin (aprobado/rechazado) */}
+    {isAdmin && !adminLoading && !isPending && (
+      <div className="suggestions-admin suggestions-admin--fixed">
+        <strong>🔒 Estado definitivo</strong>
+        <span>Esta sugerencia ya fue {suggestion.status === STATUS.APPROVED ? 'aprobada' : 'rechazada'} y no se puede modificar.</span>
+      </div>
+    )}
 
-                          {isAdmin && (
-                            <div className="suggestions-message-form">
-                              <input
-                                type="text"
-                                value={currentMsgText}
-                                onChange={(e) => setMessageText(prev => ({ ...prev, [suggestion.id]: e.target.value }))}
-                                placeholder="Escribe un mensaje para el autor..."
-                                disabled={isSending}
-                              />
-                              <button
-                                className="button button--sm button--primary"
-                                onClick={() => sendMessage(suggestion.id)}
-                                disabled={isSending || !currentMsgText.trim()}
-                              >
-                                {isSending ? 'Enviando...' : 'Enviar'}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </article>
+    {/* Panel de mensajes desplegable */}
+    {isExpanded && (
+      <div className="suggestions-messages-panel">
+        {isLoadingMsgs ? (
+          <p className="suggestions-messages-loading">Cargando mensajes...</p>
+        ) : msgList.length === 0 ? (
+          <p className="suggestions-messages-empty">No hay respuestas aún.</p>
+        ) : (
+          <ul className="suggestions-messages-list">
+            {msgList.map((msg) => (
+              <li key={msg.id} className="suggestions-message-item">
+                <div className="suggestions-message-author">
+                  <strong>{msg.authorName || 'Admin'}</strong>
+                  <span>{formatDate(msg.createdAt)}</span>
+                </div>
+                <p className="suggestions-message-text">{msg.text}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {isAdmin && (
+          <div className="suggestions-message-form">
+            <input
+              type="text"
+              value={currentMsgText}
+              onChange={(e) => setMessageText(prev => ({ ...prev, [suggestion.id]: e.target.value }))}
+              placeholder="Escribe una respuesta..."
+              disabled={isSending}
+            />
+            <button
+              className="button button--sm button--primary"
+              onClick={() => sendMessage(suggestion.id)}
+              disabled={isSending || !currentMsgText.trim()}
+            >
+              {isSending ? 'Enviando...' : 'Responder'}
+            </button>
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+</article>
+                  
                 );
               })
             )}
