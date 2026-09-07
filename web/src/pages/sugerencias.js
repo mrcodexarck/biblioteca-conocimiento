@@ -8,6 +8,9 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  addDoc,
+  query,
+  orderBy,
 } from 'firebase/firestore';
 
 import { auth, db } from '../firebase';
@@ -65,6 +68,13 @@ export default function Sugerencias() {
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminLoading, setAdminLoading] = useState(true);
+
+  // Estado para mensajes por sugerencia
+  const [messages, setMessages] = useState({}); // { suggestionId: [message, ...] }
+  const [expandedMessages, setExpandedMessages] = useState({}); // { suggestionId: true/false }
+  const [messageText, setMessageText] = useState({}); // { suggestionId: string }
+  const [loadingMessages, setLoadingMessages] = useState({}); // { suggestionId: true/false }
+  const [sendingMessage, setSendingMessage] = useState({}); // { suggestionId: true/false }
 
   async function loadSuggestions() {
     setLoading(true);
@@ -201,21 +211,11 @@ export default function Sugerencias() {
   };
 
   const changeSuggestionStatus = async (suggestionId, newStatus) => {
-    // Solo se puede cambiar si es admin, no hay acción en curso, y el estado actual es PENDING
-    if (!isAdmin || loadingAction) {
-      console.warn('No se puede cambiar estado: no es admin o acción en curso.');
-      return;
-    }
+    if (!isAdmin || loadingAction) return;
 
-    // Buscar la sugerencia actual para verificar su estado
     const currentSuggestion = suggestions.find(s => s.id === suggestionId);
-    if (!currentSuggestion) {
-      console.warn('Sugerencia no encontrada.');
-      return;
-    }
-
+    if (!currentSuggestion) return;
     if (currentSuggestion.status !== STATUS.PENDING) {
-      console.warn('No se puede cambiar el estado porque la sugerencia ya no está pendiente.');
       window.alert('Esta sugerencia ya no está pendiente. Su estado es definitivo.');
       return;
     }
@@ -230,9 +230,64 @@ export default function Sugerencias() {
       await loadSuggestions();
     } catch (err) {
       console.error('Error al actualizar estado:', err);
-      window.alert('No se pudo actualizar el estado. Revisa la consola para más detalles.');
+      window.alert('No se pudo actualizar el estado.');
     } finally {
       setLoadingAction(false);
+    }
+  };
+
+  // ---------- Funciones para mensajes ----------
+  const toggleMessages = async (suggestionId) => {
+    const isExpanded = expandedMessages[suggestionId];
+    setExpandedMessages(prev => ({ ...prev, [suggestionId]: !isExpanded }));
+
+    if (!isExpanded && !messages[suggestionId]) {
+      await loadMessages(suggestionId);
+    }
+  };
+
+  const loadMessages = async (suggestionId) => {
+    setLoadingMessages(prev => ({ ...prev, [suggestionId]: true }));
+    try {
+      const messagesRef = collection(db, 'suggestions', suggestionId, 'messages');
+      const q = query(messagesRef, orderBy('createdAt', 'asc'));
+      const snapshot = await getDocs(q);
+      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setMessages(prev => ({ ...prev, [suggestionId]: msgs }));
+    } catch (err) {
+      console.error('Error cargando mensajes:', err);
+    } finally {
+      setLoadingMessages(prev => ({ ...prev, [suggestionId]: false }));
+    }
+  };
+
+  const sendMessage = async (suggestionId) => {
+    const text = messageText[suggestionId]?.trim();
+    if (!text) return;
+    if (!isAdmin) {
+      window.alert('Solo los administradores pueden dejar mensajes.');
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) return;
+
+    setSendingMessage(prev => ({ ...prev, [suggestionId]: true }));
+    try {
+      const messagesRef = collection(db, 'suggestions', suggestionId, 'messages');
+      await addDoc(messagesRef, {
+        text,
+        authorId: user.uid,
+        authorName: user.displayName || user.email?.split('@')[0] || 'Admin',
+        createdAt: serverTimestamp(),
+      });
+      setMessageText(prev => ({ ...prev, [suggestionId]: '' }));
+      await loadMessages(suggestionId);
+    } catch (err) {
+      console.error('Error enviando mensaje:', err);
+      window.alert('No se pudo enviar el mensaje.');
+    } finally {
+      setSendingMessage(prev => ({ ...prev, [suggestionId]: false }));
     }
   };
 
@@ -243,9 +298,7 @@ export default function Sugerencias() {
           <header className="suggestions-hero">
             <span className="auth-eyebrow">BIBLIOTECA DE CONOCIMIENTO</span>
             <h1>¿Y si tu próxima idea cambia todo?</h1>
-            <p>
-              Comparte tus ideas y ayúdanos a mejorar la experiencia del equipo.
-            </p>
+            <p>Comparte tus ideas y ayúdanos a mejorar la experiencia del equipo.</p>
           </header>
 
           <section className="suggestions-stats" aria-label="Estadísticas">
@@ -354,6 +407,12 @@ export default function Sugerencias() {
             ) : (
               filteredSuggestions.map((suggestion) => {
                 const isPending = suggestion.status === STATUS.PENDING;
+                const msgList = messages[suggestion.id] || [];
+                const isExpanded = expandedMessages[suggestion.id] || false;
+                const isLoadingMsgs = loadingMessages[suggestion.id] || false;
+                const isSending = sendingMessage[suggestion.id] || false;
+                const currentMsgText = messageText[suggestion.id] || '';
+
                 return (
                   <article className="suggestions-card card" key={suggestion.id}>
                     <div className="suggestions-card__body">
@@ -378,7 +437,7 @@ export default function Sugerencias() {
                         </div>
                       </div>
 
-                      {/* Panel de administración: solo visible si la sugerencia está pendiente */}
+                      {/* Panel de administración: solo visible si la sugerencia está pendiente y es admin */}
                       {isAdmin && !adminLoading && isPending && (
                         <div className="suggestions-admin">
                           <div>
@@ -388,7 +447,7 @@ export default function Sugerencias() {
                           <div className="suggestions-admin__actions">
                             <button
                               type="button"
-                              className="button button--sm button--primary"
+                              className="button button--sm button-approve"
                               onClick={() => changeSuggestionStatus(suggestion.id, STATUS.APPROVED)}
                               disabled={!isPending}
                             >
@@ -396,22 +455,70 @@ export default function Sugerencias() {
                             </button>
                             <button
                               type="button"
-                              className="button button--sm button--outline"
+                              className="button button--sm button-reject"
                               onClick={() => changeSuggestionStatus(suggestion.id, STATUS.REJECTED)}
                               disabled={!isPending}
                             >
                               Rechazar
                             </button>
+                            <button
+                              type="button"
+                              className="button button--sm button-messages"
+                              onClick={() => toggleMessages(suggestion.id)}
+                            >
+                              {isExpanded ? 'Cerrar' : 'Responder'}
+                            </button>
                           </div>
                         </div>
                       )}
 
-                      {/* Mensaje para sugerencias con estado fijo (solo visible para admin) */}
+                      {/* Mensaje de estado fijo (aprobado/rechazado) para admin */}
                       {isAdmin && !adminLoading && !isPending && (
                         <div className="suggestions-admin suggestions-admin--fixed">
-                          <div>
-                            <span>Esta sugerencia ya fue {suggestion.status === STATUS.APPROVED ? 'aprobada' : 'rechazada'} y no se puede modificar.</span>
-                          </div>
+                          <strong>🔒 Estado definitivo</strong>
+                          <span>Esta sugerencia ya fue {suggestion.status === STATUS.APPROVED ? 'aprobada' : 'rechazada'} y no se puede modificar.</span>
+                        </div>
+                      )}
+
+                      {/* Panel de mensajes (visible para todos cuando está expandido) */}
+                      {isExpanded && (
+                        <div className="suggestions-messages-panel">
+                          {isLoadingMsgs ? (
+                            <p className="suggestions-messages-loading">Cargando mensajes...</p>
+                          ) : msgList.length === 0 ? (
+                            <p className="suggestions-messages-empty">No hay mensajes aún.</p>
+                          ) : (
+                            <ul className="suggestions-messages-list">
+                              {msgList.map((msg) => (
+                                <li key={msg.id} className="suggestions-message-item">
+                                  <div className="suggestions-message-author">
+                                    <strong>{msg.authorName || 'Admin'}</strong>
+                                    <span>{formatDate(msg.createdAt)}</span>
+                                  </div>
+                                  <p className="suggestions-message-text">{msg.text}</p>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          {isAdmin && (
+                            <div className="suggestions-message-form">
+                              <input
+                                type="text"
+                                value={currentMsgText}
+                                onChange={(e) => setMessageText(prev => ({ ...prev, [suggestion.id]: e.target.value }))}
+                                placeholder="Escribe un mensaje para el autor..."
+                                disabled={isSending}
+                              />
+                              <button
+                                className="button button--sm button--primary"
+                                onClick={() => sendMessage(suggestion.id)}
+                                disabled={isSending || !currentMsgText.trim()}
+                              >
+                                {isSending ? 'Enviando...' : 'Enviar'}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
