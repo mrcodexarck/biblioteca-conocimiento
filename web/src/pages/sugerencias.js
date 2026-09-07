@@ -90,7 +90,7 @@ export default function Sugerencias() {
       const snapshot = await getDoc(userProfileRef);
       if (snapshot.exists()) {
         const data = snapshot.data();
-        console.log('Datos del usuario:', data); // 👈 Verifica en consola
+        console.log('Datos del usuario:', data);
         setIsAdmin(data?.role === 'admin');
       } else {
         console.warn('No existe documento de usuario para UID:', user.uid);
@@ -201,10 +201,25 @@ export default function Sugerencias() {
   };
 
   const changeSuggestionStatus = async (suggestionId, newStatus) => {
+    // Solo se puede cambiar si es admin, no hay acción en curso, y el estado actual es PENDING
     if (!isAdmin || loadingAction) {
       console.warn('No se puede cambiar estado: no es admin o acción en curso.');
       return;
     }
+
+    // Buscar la sugerencia actual para verificar su estado
+    const currentSuggestion = suggestions.find(s => s.id === suggestionId);
+    if (!currentSuggestion) {
+      console.warn('Sugerencia no encontrada.');
+      return;
+    }
+
+    if (currentSuggestion.status !== STATUS.PENDING) {
+      console.warn('No se puede cambiar el estado porque la sugerencia ya no está pendiente.');
+      window.alert('Esta sugerencia ya no está pendiente. Su estado es definitivo.');
+      return;
+    }
+
     setLoadingAction(true);
     try {
       const ref = doc(db, 'suggestions', suggestionId);
@@ -337,67 +352,80 @@ export default function Sugerencias() {
                 </p>
               </div>
             ) : (
-              filteredSuggestions.map((suggestion) => (
-                <article className="suggestions-card card" key={suggestion.id}>
-                  <div className="suggestions-card__body">
-                    <div className="suggestions-card__top">
-                      <div>
-                        <span className="badge badge--secondary">
-                          {suggestion.category || 'General'}
-                        </span>
-                        <h2>{suggestion.title}</h2>
-                      </div>
-                      <span className={`suggestions-status suggestions-status--${suggestion.status}`}>
-                        {getStatusEmoji(suggestion.status)} {getStatusLabel(suggestion.status)}
-                      </span>
-                    </div>
-
-                    <p className="suggestions-card__description">{suggestion.description}</p>
-
-                    <div className="suggestions-card__footer">
-                      <div className="suggestions-card__meta">
-                        <span>Propuesta por <strong>{suggestion.authorName || 'Usuario'}</strong></span>
-                        <span>{formatDate(suggestion.createdAt)}</span>
-                      </div>
-                    </div>
-
-                    {isAdmin && !adminLoading && (
-                      <div className="suggestions-admin">
+              filteredSuggestions.map((suggestion) => {
+                const isPending = suggestion.status === STATUS.PENDING;
+                return (
+                  <article className="suggestions-card card" key={suggestion.id}>
+                    <div className="suggestions-card__body">
+                      <div className="suggestions-card__top">
                         <div>
-                          <strong>Administración</strong>
-                          <span>Solo visible para administradores.</span>
+                          <span className="badge badge--secondary">
+                            {suggestion.category || 'General'}
+                          </span>
+                          <h2>{suggestion.title}</h2>
                         </div>
-                        <div className="suggestions-admin__actions">
-                          <button
-                            type="button"
-                            className="button button--sm button--outline"
-                            onClick={() => changeSuggestionStatus(suggestion.id, STATUS.PENDING)}
-                            disabled={suggestion.status === STATUS.PENDING}
-                          >
-                            Pendiente
-                          </button>
-                          <button
-                            type="button"
-                            className="button button--sm button--primary"
-                            onClick={() => changeSuggestionStatus(suggestion.id, STATUS.APPROVED)}
-                            disabled={suggestion.status === STATUS.APPROVED}
-                          >
-                            Aprobar
-                          </button>
-                          <button
-                            type="button"
-                            className="button button--sm button--outline"
-                            onClick={() => changeSuggestionStatus(suggestion.id, STATUS.REJECTED)}
-                            disabled={suggestion.status === STATUS.REJECTED}
-                          >
-                            Rechazar
-                          </button>
+                        <span className={`suggestions-status suggestions-status--${suggestion.status}`}>
+                          {getStatusEmoji(suggestion.status)} {getStatusLabel(suggestion.status)}
+                        </span>
+                      </div>
+
+                      <p className="suggestions-card__description">{suggestion.description}</p>
+
+                      <div className="suggestions-card__footer">
+                        <div className="suggestions-card__meta">
+                          <span>Propuesta por <strong>{suggestion.authorName || 'Usuario'}</strong></span>
+                          <span>{formatDate(suggestion.createdAt)}</span>
                         </div>
                       </div>
-                    )}
-                  </div>
-                </article>
-              ))
+
+                      {/* Panel de administración: solo visible si la sugerencia está pendiente */}
+                      {isAdmin && !adminLoading && isPending && (
+                        <div className="suggestions-admin">
+                          <div>
+                            <strong>Administración</strong>
+                            <span>Cambiar estado de la sugerencia:</span>
+                          </div>
+                          <div className="suggestions-admin__actions">
+                            <button
+                              type="button"
+                              className="button button--sm button--outline"
+                              onClick={() => changeSuggestionStatus(suggestion.id, STATUS.PENDING)}
+                              disabled={!isPending}
+                            >
+                              Pendiente
+                            </button>
+                            <button
+                              type="button"
+                              className="button button--sm button--primary"
+                              onClick={() => changeSuggestionStatus(suggestion.id, STATUS.APPROVED)}
+                              disabled={!isPending}
+                            >
+                              Aprobar
+                            </button>
+                            <button
+                              type="button"
+                              className="button button--sm button--outline"
+                              onClick={() => changeSuggestionStatus(suggestion.id, STATUS.REJECTED)}
+                              disabled={!isPending}
+                            >
+                              Rechazar
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Mensaje para sugerencias con estado fijo (solo visible para admin) */}
+                      {isAdmin && !adminLoading && !isPending && (
+                        <div className="suggestions-admin suggestions-admin--fixed">
+                          <div>
+                            <span>Esta sugerencia ya fue {suggestion.status === STATUS.APPROVED ? 'aprobada' : 'rechazada'} y no se puede modificar.</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
+              })
             )}
           </section>
         </div>
