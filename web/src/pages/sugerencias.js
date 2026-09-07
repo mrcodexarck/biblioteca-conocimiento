@@ -388,14 +388,6 @@ export default function Sugerencias() {
                           <div className="suggestions-admin__actions">
                             <button
                               type="button"
-                              className="button button--sm button--outline"
-                              onClick={() => changeSuggestionStatus(suggestion.id, STATUS.PENDING)}
-                              disabled={!isPending}
-                            >
-                              Pendiente
-                            </button>
-                            <button
-                              type="button"
                               className="button button--sm button--primary"
                               onClick={() => changeSuggestionStatus(suggestion.id, STATUS.APPROVED)}
                               disabled={!isPending}
