@@ -6,6 +6,9 @@ const highlights = [
   { icon: '📚', title: 'Cursos y talleres', text: 'Rutas de aprendizaje por módulos con contenido progresivo y ejercicios prácticos.' },
   { icon: '🧭', title: 'Documentación', text: 'Guías organizadas para consultar procesos, conceptos y soluciones de soporte.' },
   { icon: '🛠️', title: 'Casos comunes', text: 'Respuestas rápidas para incidentes frecuentes y tareas repetitivas del equipo.' },
+  { icon: '🛠️', title: 'Sugerencias', text: 'Respuestas rápidas para incidentes frecuentes y tareas repetitivas del equipo.' },
+
+
 ];
 
 export default function Home() {

@@ -1,0 +1,90 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        )
+        && get(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        ).data.role == 'admin';
+    }
+
+    match /users/{userId} {
+
+      allow read: if isSignedIn()
+        && request.auth.uid == userId;
+
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role == 'user';
+
+      allow update, delete: if false;
+    }
+
+    match /suggestions/{suggestionId} {
+
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.votesCount == 0
+        && request.resource.data.commentsCount == 0
+        && request.resource.data.title is string
+        && request.resource.data.description is string
+        && request.resource.data.category is string
+        && request.resource.data.authorName is string
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if isAdmin()
+        || (
+          isSignedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['votesCount', 'updatedAt'])
+          && (
+            (
+              request.resource.data.votesCount ==
+                resource.data.votesCount + 1
+              && existsAfter(
+                /databases/$(database)/documents/suggestions/$(suggestionId)/votes/$(request.auth.uid)
+              )
+            )
+            ||
+            (
+              request.resource.data.votesCount ==
+                resource.data.votesCount - 1
+              && request.resource.data.votesCount >= 0
+              && !existsAfter(
+                /databases/$(database)/documents/suggestions/$(suggestionId)/votes/$(request.auth.uid)
+              )
+            )
+          )
+        );
+
+      allow delete: if isAdmin();
+
+      match /votes/{userId} {
+
+        allow read: if isSignedIn();
+
+        allow create: if isSignedIn()
+          && userId == request.auth.uid
+          && request.resource.data.userId == request.auth.uid;
+
+        allow delete: if isSignedIn()
+          && userId == request.auth.uid;
+
+        allow update: if false;
+      }
+    }
+  }
+}

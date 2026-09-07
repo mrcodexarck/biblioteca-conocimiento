@@ -5,6 +5,7 @@ import {
   getAuth,
   setPersistence,
 } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyAc5ReoLLTETiGi6iYgYbziH0m11KWFG34',
@@ -16,7 +17,9 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 auth.languageCode = 'es';
 
@@ -31,4 +34,4 @@ export async function configurePersistence(rememberSession) {
   );
 }
 
-export { auth };
+export { auth, db };
