@@ -29,11 +29,8 @@ const STATUS_LABELS = {
 
 const STATUS_EMOJIS = {
   [STATUS.PENDING]: '🟡',
-  [STATUS.REVIEW]: '🔵',
   [STATUS.APPROVED]: '🟢',
   [STATUS.REJECTED]: '🔴',
-  [STATUS.IN_PROGRESS]: '🟣',
-  [STATUS.COMPLETED]: '✅',
 };
 
 const CATEGORIES = [
