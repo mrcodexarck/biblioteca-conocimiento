@@ -88,7 +88,14 @@ export default function Sugerencias() {
       if (!user) { setIsAdmin(false); return; }
       const userProfileRef = doc(db, 'users', user.uid);
       const snapshot = await getDoc(userProfileRef);
-      setIsAdmin(snapshot.exists() && snapshot.data()?.role === 'admin');
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        console.log('Datos del usuario:', data); // 👈 Verifica en consola
+        setIsAdmin(data?.role === 'admin');
+      } else {
+        console.warn('No existe documento de usuario para UID:', user.uid);
+        setIsAdmin(false);
+      }
     } catch (err) {
       console.error(err);
       setIsAdmin(false);
@@ -115,13 +122,12 @@ export default function Sugerencias() {
     });
 
     result.sort((a, b) => {
-      if (sortMode === 'comments') {
-        return (b.commentsCount || 0) - (a.commentsCount || 0);
+      if (sortMode === 'recent') {
+        const aDate = a.createdAt?.toMillis?.() || 0;
+        const bDate = b.createdAt?.toMillis?.() || 0;
+        return bDate - aDate;
       }
-      // sortMode === 'recent'
-      const aDate = a.createdAt?.toMillis?.() || 0;
-      const bDate = b.createdAt?.toMillis?.() || 0;
-      return bDate - aDate;
+      return 0;
     });
     return result;
   }, [suggestions, search, statusFilter, categoryFilter, sortMode]);
@@ -178,7 +184,6 @@ export default function Sugerencias() {
         authorEmail: user.email || '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        commentsCount: 0,
       });
       setForm(EMPTY_FORM);
       setFormMessage('¡Sugerencia enviada! Queda pendiente de revisión.');
@@ -196,7 +201,10 @@ export default function Sugerencias() {
   };
 
   const changeSuggestionStatus = async (suggestionId, newStatus) => {
-    if (!isAdmin || loadingAction) return;
+    if (!isAdmin || loadingAction) {
+      console.warn('No se puede cambiar estado: no es admin o acción en curso.');
+      return;
+    }
     setLoadingAction(true);
     try {
       const ref = doc(db, 'suggestions', suggestionId);
@@ -206,8 +214,8 @@ export default function Sugerencias() {
       });
       await loadSuggestions();
     } catch (err) {
-      console.error(err);
-      window.alert('No se pudo actualizar el estado.');
+      console.error('Error al actualizar estado:', err);
+      window.alert('No se pudo actualizar el estado. Revisa la consola para más detalles.');
     } finally {
       setLoadingAction(false);
     }
@@ -221,7 +229,7 @@ export default function Sugerencias() {
             <span className="auth-eyebrow">BIBLIOTECA DE CONOCIMIENTO</span>
             <h1>¿Y si tu próxima idea cambia todo?</h1>
             <p>
-              Comparte tus ideas, vota por las propuestas que más aportan y ayúdanos a mejorar la experiencia del equipo.
+              Comparte tus ideas y ayúdanos a mejorar la experiencia del equipo.
             </p>
           </header>
 
@@ -277,7 +285,6 @@ export default function Sugerencias() {
                 onChange={(e) => setSortMode(e.target.value)}
               >
                 <option value="recent">Más recientes</option>
-                <option value="comments">Más comentadas</option>
               </select>
             </div>
 
@@ -351,11 +358,6 @@ export default function Sugerencias() {
                       <div className="suggestions-card__meta">
                         <span>Propuesta por <strong>{suggestion.authorName || 'Usuario'}</strong></span>
                         <span>{formatDate(suggestion.createdAt)}</span>
-                      </div>
-                      <div className="suggestions-card__actions">
-                        <span className="suggestions-comments">
-                          💬 {Number(suggestion.commentsCount || 0)}
-                        </span>
                       </div>
                     </div>
 
