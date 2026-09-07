@@ -17,20 +17,14 @@ import '../css/suggestions.css';
 
 const STATUS = {
   PENDING: 'pending',
-  REVIEW: 'review',
   APPROVED: 'approved',
   REJECTED: 'rejected',
-  IN_PROGRESS: 'in_progress',
-  COMPLETED: 'completed',
 };
 
 const STATUS_LABELS = {
   [STATUS.PENDING]: 'Pendiente',
-  [STATUS.REVIEW]: 'En revisión',
   [STATUS.APPROVED]: 'Aprobada',
   [STATUS.REJECTED]: 'Rechazada',
-  [STATUS.IN_PROGRESS]: 'En desarrollo',
-  [STATUS.COMPLETED]: 'Completada',
 };
 
 const STATUS_EMOJIS = {
