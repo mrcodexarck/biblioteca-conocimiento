@@ -52,7 +52,7 @@ const config = {
           { type: 'docSidebar', sidebarId: 'casosSidebar', position: 'left', label: 'Casos comunes', className: 'ruta-privada' },
           { to: '/login', label: 'Iniciar sesión', position: 'right', className: 'btn-login' },
           { to: '/logout', label: 'Cerrar sesión', position: 'right', className: 'ruta-privada' },
-          { to: '/sugerencias', label: 'Sugerencias', position: 'left', className: 'ruta-privada' },
+          { to: '/Sugerencias', label: 'Sugerencias', position: 'left', className: 'ruta-privada' },
 
         ],
       },
