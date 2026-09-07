@@ -45,9 +45,6 @@ const STATUS_EMOJIS = {
 const CATEGORIES = [
   'Funcionalidad',
   'Mejora',
-  'Documentación',
-  'Cursos',
-  'Soporte',
   'Otro',
 ];
 
