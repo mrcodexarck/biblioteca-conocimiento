@@ -11,7 +11,6 @@ import {
   addDoc,
   query,
   orderBy,
-  increment,
 } from 'firebase/firestore';
 
 import { auth, db } from '../firebase';
@@ -77,6 +76,9 @@ export default function Sugerencias() {
   const [loadingMessages, setLoadingMessages] = useState({}); // { suggestionId: true/false }
   const [sendingMessage, setSendingMessage] = useState({}); // { suggestionId: true/false }
 
+  // NUEVO: estado para guardar el conteo de mensajes de cada sugerencia
+  const [messageCounts, setMessageCounts] = useState({}); // { suggestionId: number }
+
   async function loadSuggestions() {
     setLoading(true);
     setError('');
@@ -84,6 +86,22 @@ export default function Sugerencias() {
       const snapshot = await getDocs(collection(db, 'suggestions'));
       const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setSuggestions(data);
+
+      // Contar mensajes de cada sugerencia
+      const counts = {};
+      await Promise.all(
+        data.map(async (suggestion) => {
+          try {
+            const messagesRef = collection(db, 'suggestions', suggestion.id, 'messages');
+            const messagesSnapshot = await getDocs(messagesRef);
+            counts[suggestion.id] = messagesSnapshot.size;
+          } catch (err) {
+            console.error(`Error contando mensajes de ${suggestion.id}:`, err);
+            counts[suggestion.id] = 0;
+          }
+        })
+      );
+      setMessageCounts(counts);
     } catch (err) {
       console.error(err);
       setError('No pudimos cargar las sugerencias. Revisa tu conexión.');
@@ -195,7 +213,6 @@ export default function Sugerencias() {
         authorEmail: user.email || '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        messagesCount: 0, // inicializamos el contador
       });
       setForm(EMPTY_FORM);
       setFormMessage('¡Sugerencia enviada! Queda pendiente de revisión.');
@@ -284,17 +301,15 @@ export default function Sugerencias() {
         createdAt: serverTimestamp(),
       });
 
-      // Actualizar el contador de mensajes en el documento de la sugerencia
-      const suggestionRef = doc(db, 'suggestions', suggestionId);
-      await updateDoc(suggestionRef, {
-        messagesCount: increment(1),
-        updatedAt: serverTimestamp(),
-      });
+      // Actualizar el contador localmente (sin recargar la página)
+      setMessageCounts(prev => ({
+        ...prev,
+        [suggestionId]: (prev[suggestionId] || 0) + 1,
+      }));
 
       setMessageText(prev => ({ ...prev, [suggestionId]: '' }));
-      // Recargar mensajes y sugerencias para actualizar el contador
+      // Recargar mensajes
       await loadMessages(suggestionId);
-      await loadSuggestions();
     } catch (err) {
       console.error('Error enviando mensaje:', err);
       window.alert('No se pudo enviar el mensaje.');
@@ -424,7 +439,8 @@ export default function Sugerencias() {
                 const isLoadingMsgs = loadingMessages[suggestion.id] || false;
                 const isSending = sendingMessage[suggestion.id] || false;
                 const currentMsgText = messageText[suggestion.id] || '';
-                const count = suggestion.messagesCount || 0;
+                // ✅ USAR EL CONTADOR DINÁMICO
+                const count = messageCounts[suggestion.id] ?? 0;
 
                 return (
                   <article className="suggestions-card card" key={suggestion.id}>
@@ -449,7 +465,7 @@ export default function Sugerencias() {
                           <span>{formatDate(suggestion.createdAt)}</span>
                         </div>
 
-                        {/* Botón de respuestas visible para todos los autenticados */}
+                        {/* ✅ Botón de respuestas con contador dinámico */}
                         {auth.currentUser && (
                           <button
                             className="button button--sm button-messages"
@@ -460,7 +476,7 @@ export default function Sugerencias() {
                         )}
                       </div>
 
-                      {/* Panel de administración: solo visible si la sugerencia está pendiente y es admin */}
+                      {/* Panel de administración */}
                       {isAdmin && !adminLoading && isPending && (
                         <div className="suggestions-admin">
                           <div>
@@ -488,7 +504,7 @@ export default function Sugerencias() {
                         </div>
                       )}
 
-                      {/* Panel de mensajes desplegable */}
+                      {/* Panel de mensajes */}
                       {isExpanded && (
                         <div className="suggestions-messages-panel">
                           {isLoadingMsgs ? (
