@@ -47,14 +47,42 @@ const config = {
         title: 'Biblioteca de Conocimiento',
         logo: { alt: 'Biblioteca de Conocimiento', src: 'img/logo.png' },
         items: [
-          { to: '/Cursos', label: 'Cursos y talleres', position: 'left', className: 'ruta-privada' },
-          { type: 'docSidebar', sidebarId: 'documentacionSidebar', position: 'left', label: 'Documentación', className: 'ruta-privada' },
-          { type: 'docSidebar', sidebarId: 'casosSidebar', position: 'left', label: 'Casos comunes', className: 'ruta-privada' },
-          { to: '/login', label: 'Iniciar sesión', position: 'right', className: 'btn-login' },
-          { to: '/logout', label: 'Cerrar sesión', position: 'right', className: 'ruta-privada' },
-          { to: '/Sugerencias', label: 'Sugerencias', position: 'left', className: 'ruta-privada' },
+  {
+    to: '/Cursos',
+    label: 'Cursos y talleres',
+    position: 'left',
+    className: 'ruta-privada',
+  },
 
-        ],
+  {
+    type: 'docSidebar',
+    sidebarId: 'documentacionSidebar',
+    position: 'left',
+    label: 'Documentación',
+    className: 'ruta-privada',
+  },
+
+  {
+    type: 'docSidebar',
+    sidebarId: 'casosSidebar',
+    position: 'left',
+    label: 'Casos comunes',
+    className: 'ruta-privada',
+  },
+
+  {
+    to: '/sugerencias',
+    label: 'Sugerencias',
+    position: 'left',
+    className: 'ruta-privada',
+  },
+
+  {
+    type: 'html',
+    position: 'right',
+    value: '<div id="user-menu-root"></div>',
+  },
+],
       },
       colorMode: { defaultMode: 'light', disableSwitch: false, respectPrefersColorScheme: false },
       footer: {
