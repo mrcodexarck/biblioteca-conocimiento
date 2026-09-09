@@ -15,6 +15,7 @@ import {
 
 import { auth, db } from '../firebase';
 import '../css/suggestions.css';
+import { createNotification } from '../utils/notifications';
 
 const STATUS = {
   PENDING: 'pending',
@@ -69,15 +70,12 @@ export default function Sugerencias() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminLoading, setAdminLoading] = useState(true);
 
-  // Estado para mensajes por sugerencia
-  const [messages, setMessages] = useState({}); // { suggestionId: [message, ...] }
-  const [expandedMessages, setExpandedMessages] = useState({}); // { suggestionId: true/false }
-  const [messageText, setMessageText] = useState({}); // { suggestionId: string }
-  const [loadingMessages, setLoadingMessages] = useState({}); // { suggestionId: true/false }
-  const [sendingMessage, setSendingMessage] = useState({}); // { suggestionId: true/false }
-
-  // NUEVO: estado para guardar el conteo de mensajes de cada sugerencia
-  const [messageCounts, setMessageCounts] = useState({}); // { suggestionId: number }
+  const [messages, setMessages] = useState({});
+  const [expandedMessages, setExpandedMessages] = useState({});
+  const [messageText, setMessageText] = useState({});
+  const [loadingMessages, setLoadingMessages] = useState({});
+  const [sendingMessage, setSendingMessage] = useState({});
+  const [messageCounts, setMessageCounts] = useState({});
 
   async function loadSuggestions() {
     setLoading(true);
@@ -87,7 +85,6 @@ export default function Sugerencias() {
       const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setSuggestions(data);
 
-      // Contar mensajes de cada sugerencia
       const counts = {};
       await Promise.all(
         data.map(async (suggestion) => {
@@ -246,6 +243,17 @@ export default function Sugerencias() {
         status: newStatus,
         updatedAt: serverTimestamp(),
       });
+
+      // --- Crear notificación para el autor ---
+      const statusLabel = newStatus === STATUS.APPROVED ? 'aprobada' : 'rechazada';
+      await createNotification(
+        currentSuggestion.authorId,
+        suggestionId,
+        currentSuggestion.title,
+        'status_change',
+        `Tu sugerencia "${currentSuggestion.title}" fue ${statusLabel}`
+      );
+
       await loadSuggestions();
     } catch (err) {
       console.error('Error al actualizar estado:', err);
@@ -280,7 +288,7 @@ export default function Sugerencias() {
     }
   };
 
-  const sendMessage = async (suggestionId) => {
+  const sendMessage = async (suggestionId, suggestionTitle, authorId) => {
     const text = messageText[suggestionId]?.trim();
     if (!text) return;
     if (!isAdmin) {
@@ -301,14 +309,21 @@ export default function Sugerencias() {
         createdAt: serverTimestamp(),
       });
 
-      // Actualizar el contador localmente (sin recargar la página)
+      // --- Crear notificación para el autor ---
+      await createNotification(
+        authorId,
+        suggestionId,
+        suggestionTitle,
+        'new_reply',
+        `Un administrador respondió a tu sugerencia "${suggestionTitle}"`
+      );
+
       setMessageCounts(prev => ({
         ...prev,
         [suggestionId]: (prev[suggestionId] || 0) + 1,
       }));
 
       setMessageText(prev => ({ ...prev, [suggestionId]: '' }));
-      // Recargar mensajes
       await loadMessages(suggestionId);
     } catch (err) {
       console.error('Error enviando mensaje:', err);
@@ -439,7 +454,6 @@ export default function Sugerencias() {
                 const isLoadingMsgs = loadingMessages[suggestion.id] || false;
                 const isSending = sendingMessage[suggestion.id] || false;
                 const currentMsgText = messageText[suggestion.id] || '';
-                // ✅ USAR EL CONTADOR DINÁMICO
                 const count = messageCounts[suggestion.id] ?? 0;
 
                 return (
@@ -465,7 +479,6 @@ export default function Sugerencias() {
                           <span>{formatDate(suggestion.createdAt)}</span>
                         </div>
 
-                        {/* ✅ Botón de respuestas con contador dinámico */}
                         {auth.currentUser && (
                           <button
                             className="button button--sm button-messages"
@@ -476,7 +489,6 @@ export default function Sugerencias() {
                         )}
                       </div>
 
-                      {/* Panel de administración */}
                       {isAdmin && !adminLoading && isPending && (
                         <div className="suggestions-admin">
                           <div>
@@ -504,7 +516,6 @@ export default function Sugerencias() {
                         </div>
                       )}
 
-                      {/* Panel de mensajes */}
                       {isExpanded && (
                         <div className="suggestions-messages-panel">
                           {isLoadingMsgs ? (
@@ -536,7 +547,7 @@ export default function Sugerencias() {
                               />
                               <button
                                 className="button button--sm button--primary"
-                                onClick={() => sendMessage(suggestion.id)}
+                                onClick={() => sendMessage(suggestion.id, suggestion.title, suggestion.authorId)}
                                 disabled={isSending || !currentMsgText.trim()}
                               >
                                 {isSending ? 'Enviando...' : 'Responder'}

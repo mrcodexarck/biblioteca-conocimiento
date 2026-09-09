@@ -47,36 +47,10 @@ const config = {
         title: 'Biblioteca de Conocimiento',
         logo: { alt: 'Biblioteca de Conocimiento', src: 'img/logo.png' },
         items: [
-  {
-    to: '/Cursos',
-    label: 'Cursos y talleres',
-    position: 'left',
-    className: 'ruta-privada',
-  },
-
-  {
-    type: 'docSidebar',
-    sidebarId: 'documentacionSidebar',
-    position: 'left',
-    label: 'Documentación',
-    className: 'ruta-privada',
-  },
-
-  {
-    type: 'docSidebar',
-    sidebarId: 'casosSidebar',
-    position: 'left',
-    label: 'Casos comunes',
-    className: 'ruta-privada',
-  },
-
-  {
-    to: '/sugerencias',
-    label: 'Sugerencias',
-    position: 'left',
-    className: 'ruta-privada',
-  },
-
+  // { to: '/Cursos', label: 'Cursos y talleres', position: 'left', className: 'ruta-privada' },
+  // { type: 'docSidebar', sidebarId: 'documentacionSidebar', position: 'left', label: 'Documentación', className: 'ruta-privada' },
+  // { type: 'docSidebar', sidebarId: 'casosSideba  r', position: 'left', label: 'Casos comunes', className: 'ruta-privada' },
+  // { to: '/sugerencias', label: 'Sugerencias', position: 'left', className: 'ruta-privada' },
   {
     type: 'html',
     position: 'right',
