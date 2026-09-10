@@ -61,6 +61,7 @@ export default function Sugerencias() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortMode, setSortMode] = useState('recent');
+  const [showAll, setShowAll] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -136,31 +137,34 @@ export default function Sugerencias() {
   }, []);
 
   const filteredSuggestions = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-    const result = suggestions.filter((s) => {
-      const matchSearch =
-        !normalizedSearch ||
-        (s.title || '').toLowerCase().includes(normalizedSearch) ||
-        (s.description || '').toLowerCase().includes(normalizedSearch);
-      const matchStatus = statusFilter === 'all' || s.status === statusFilter;
-      const matchCategory = categoryFilter === 'all' || s.category === categoryFilter;
-      return matchSearch && matchStatus && matchCategory;
-    });
+  const normalizedSearch = search.trim().toLowerCase();
+  const currentUser = auth.currentUser;
 
-    result.sort((a, b) => {
-  const aDate = a.createdAt?.toMillis?.() || 0;
-  const bDate = b.createdAt?.toMillis?.() || 0;
+  const result = suggestions.filter((s) => {
+    const matchSearch =
+      !normalizedSearch ||
+      (s.title || '').toLowerCase().includes(normalizedSearch) ||
+      (s.description || '').toLowerCase().includes(normalizedSearch);
+    const matchStatus = statusFilter === 'all' || s.status === statusFilter;
+    const matchCategory = categoryFilter === 'all' || s.category === categoryFilter;
+    const matchMine =
+  showAll || (currentUser && s.authorId === currentUser.uid);
 
-  if (sortMode === 'oldest') {
-    // Más antiguas primero (ascendente)
-    return aDate - bDate;
-  }
+    return matchSearch && matchStatus && matchCategory && matchMine;
+  });
 
-  // Más recientes primero (descendente) — comportamiento por defecto
-  return bDate - aDate;
-});
-    return result;
-  }, [suggestions, search, statusFilter, categoryFilter, sortMode]);
+  result.sort((a, b) => {
+    const aDate = a.createdAt?.toMillis?.() || 0;
+    const bDate = b.createdAt?.toMillis?.() || 0;
+
+    if (sortMode === 'oldest') {
+      return aDate - bDate;
+    }
+    return bDate - aDate;
+  });
+
+  return result;
+}, [suggestions, search, statusFilter, categoryFilter, sortMode, showAll]);
 
   const stats = useMemo(() => {
     const total = suggestions.length;
@@ -367,28 +371,41 @@ export default function Sugerencias() {
           </section>
 
           <section className="suggestions-toolbar">
-            <div className="suggestions-search">
-              <label htmlFor="suggestions-search">Buscar sugerencias</label>
-              <input
-                id="suggestions-search"
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Busca por título o descripción..."
-              />
-            </div>
-            <button
-              className="button button--primary"
-              type="button"
-              onClick={() => {
-                setShowForm(true);
-                setFormMessage('');
-                setFormError('');
-              }}
-            >
-              + Proponer idea
-            </button>
-          </section>
+  <div className="suggestions-search">
+    <label htmlFor="suggestions-search">Buscar sugerencias</label>
+    <input
+      id="suggestions-search"
+      type="search"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      placeholder="Busca por título o descripción..."
+    />
+  </div>
+
+  <div className="suggestions-toolbar__actions">
+    <button
+      type="button"
+      className={`button ${showAll ? 'button--primary' : 'button--gray'}`}
+      onClick={() => setShowAll((prev) => !prev)}
+      title={showAll ? 'Mostrando todas las sugerencias' : 'Mostrando solo mis sugerencias'}
+      aria-label={showAll ? 'Mostrando todas las sugerencias' : 'Mostrando solo mis sugerencias'}
+    >
+     {showAll ? '👥' : '👤'}
+    </button>
+
+    <button
+      className="button button--primary"
+      type="button"
+      onClick={() => {
+        setShowForm(true);
+        setFormMessage('');
+        setFormError('');
+      }}
+    >
+      + Proponer idea
+    </button>
+  </div>
+</section>
 
           <section className="suggestions-filters">
             <div className="suggestions-filter-group">

@@ -61,6 +61,11 @@
   align-items: end;
   margin-bottom: 1rem;
 }
+.suggestions-toolbar__actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
 .suggestions-search {
   display: grid;
   gap: 0.4rem;
@@ -426,6 +431,14 @@
   .suggestions-toolbar {
     grid-template-columns: 1fr;
   }
+  .suggestions-toolbar__actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .suggestions-toolbar__actions .button {
+    width: 100%;
+  }
   .suggestions-card__footer {
     flex-direction: column;
     align-items: flex-start;
@@ -441,7 +454,6 @@
     width: 100%;
   }
 }
-
 @media (max-width: 500px) {
   .suggestions-stats {
     grid-template-columns: 1fr;
@@ -458,4 +470,14 @@
   .suggestions-message-form button {
     width: 100%;
   }
+}
+/* Botón gris (estado inactivo del filtro "Todas") */
+.button--gray {
+  background-color: #4b5563 !important;
+  border-color: #4b5563 !important;
+  color: white !important;
+}
+.button--gray:hover {
+  background-color: #6b7280 !important;
+  border-color: #4b5563 !important;
 }
