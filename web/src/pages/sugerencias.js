@@ -148,13 +148,17 @@ export default function Sugerencias() {
     });
 
     result.sort((a, b) => {
-      if (sortMode === 'recent') {
-        const aDate = a.createdAt?.toMillis?.() || 0;
-        const bDate = b.createdAt?.toMillis?.() || 0;
-        return bDate - aDate;
-      }
-      return 0;
-    });
+  const aDate = a.createdAt?.toMillis?.() || 0;
+  const bDate = b.createdAt?.toMillis?.() || 0;
+
+  if (sortMode === 'oldest') {
+    // Más antiguas primero (ascendente)
+    return aDate - bDate;
+  }
+
+  // Más recientes primero (descendente) — comportamiento por defecto
+  return bDate - aDate;
+});
     return result;
   }, [suggestions, search, statusFilter, categoryFilter, sortMode]);
 
@@ -395,6 +399,7 @@ export default function Sugerencias() {
                 onChange={(e) => setSortMode(e.target.value)}
               >
                 <option value="recent">Más recientes</option>
+                <option value="oldest">Más antiguas</option>
               </select>
             </div>
 
