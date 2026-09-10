@@ -118,7 +118,7 @@ export default function Sugerencias() {
       if (snapshot.exists()) {
         const data = snapshot.data();
         console.log('Datos del usuario:', data);
-        setIsAdmin(data?.role === 'admin');
+        setIsAdmin(data?.role === 'admin' || data?.role === 'propietario');
       } else {
         console.warn('No existe documento de usuario para UID:', user.uid);
         setIsAdmin(false);
