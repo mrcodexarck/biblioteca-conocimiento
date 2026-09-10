@@ -16,7 +16,7 @@ import { createPortal } from 'react-dom';
 
 import { auth } from '@site/src/firebase';
 
-import UserMenu from '@site/src/components/Quiz/UserMenu';
+import UserMenu from '@site/src/components/UserMenu';
 
 import {
   isTestInProgress,
@@ -31,15 +31,31 @@ import {
 const COURSE_TESTS = {
   'curso-contabilidad': {
     testPath:
-      '/docs/cursos/curso-contabilidad/3-modulo-tres',
+      '/docs/cursos/curso-contabilidad/modulo-uno',
 
     coursePrefixes: [
-      '/docs/cursos/curso-contabilidad/',
-      '/Cursos',
+      '/docs/cursos/curso-contabilidad',
+    ],
+  },
+
+  'curso-nomina': {
+    testPath:
+      '/docs/cursos/curso-nomina/bienvenida',
+
+    coursePrefixes: [
+      '/docs/cursos/curso-nomina/bienvenida',
+    ],
+  },
+
+  'curso-isv': {
+    testPath:
+      '/docs/cursos/curso-isv/modulo-uno',
+
+    coursePrefixes: [
+      '/docs/cursos/curso-isv',
     ],
   },
 };
-
 
 /*
  * =========================================================
@@ -53,7 +69,6 @@ function isAuthRoute(pathname) {
     pathname.includes('/logout')
   );
 }
-
 
 /*
  * =========================================================
@@ -89,7 +104,6 @@ function getActiveLockedCourse(pathname) {
   return null;
 }
 
-
 /*
  * =========================================================
  * ROOT PRINCIPAL
@@ -113,9 +127,10 @@ export default function Root({
 
   const contabilidadTestPath =
     useBaseUrl(
-      '/docs/cursos/curso-contabilidad/3-modulo-tres',
+      COURSE_TESTS[
+        'curso-contabilidad'
+      ].testPath,
     );
-
 
   /*
    * =======================================================
@@ -133,7 +148,6 @@ export default function Root({
     setUser,
   ] = useState(null);
 
-
   /*
    * =======================================================
    * ESTADO DEL CONTENEDOR DEL USER MENU
@@ -147,7 +161,6 @@ export default function Root({
     userMenuContainer,
     setUserMenuContainer,
   ] = useState(null);
-
 
   /*
    * =======================================================
@@ -167,7 +180,6 @@ export default function Root({
 
     return unsubscribe;
   }, []);
-
 
   /*
    * =======================================================
@@ -190,7 +202,6 @@ export default function Root({
         user?.emailVerified,
       );
 
-
     /*
      * -----------------------------------------------------
      * USUARIO NO AUTENTICADO
@@ -206,7 +217,6 @@ export default function Root({
 
       return;
     }
-
 
     /*
      * -----------------------------------------------------
@@ -229,7 +239,6 @@ export default function Root({
       return;
     }
 
-
     /*
      * -----------------------------------------------------
      * CURSO BLOQUEADO POR EXAMEN
@@ -251,7 +260,6 @@ export default function Root({
 
       return;
     }
-
 
     /*
      * -----------------------------------------------------
@@ -278,7 +286,6 @@ export default function Root({
     contabilidadTestPath,
     user,
   ]);
-
 
   /*
    * =======================================================
@@ -309,6 +316,7 @@ export default function Root({
       /*
        * En login no necesitamos montar el menú.
        */
+
       if (
         isAuthRoute(
           location.pathname,
@@ -328,6 +336,7 @@ export default function Root({
        * a que Docusaurus termine de crear
        * el navbar.
        */
+
       if (!container) {
         setUserMenuContainer(null);
         return;
@@ -338,12 +347,11 @@ export default function Root({
       );
     };
 
-
     /*
      * Primer intento.
      */
-    findUserMenuContainer();
 
+    findUserMenuContainer();
 
     /*
      * Observamos el DOM para detectar:
@@ -352,6 +360,7 @@ export default function Root({
      * - reemplazo del navbar
      * - navegación entre secciones
      */
+
     observer =
       new MutationObserver(() => {
         findUserMenuContainer();
@@ -365,7 +374,6 @@ export default function Root({
       },
     );
 
-
     return () => {
       active = false;
 
@@ -378,7 +386,6 @@ export default function Root({
   }, [
     location.pathname,
   ]);
-
 
   /*
    * =======================================================
@@ -407,7 +414,6 @@ export default function Root({
     );
   }
 
-
   /*
    * =======================================================
    * RENDER FINAL
@@ -428,19 +434,6 @@ export default function Root({
       }
     >
       {children}
-
-      {/*
-       * El UserMenu solamente se muestra:
-       *
-       * 1. Cuando existe una sesión autenticada.
-       * 2. Cuando el correo está verificado.
-       * 3. Cuando NO estamos en login/logout.
-       * 4. Cuando Docusaurus ya creó #user-menu-root.
-       *
-       * createPortal mantiene UserMenu dentro del árbol
-       * React actual aunque visualmente aparezca dentro
-       * del navbar.
-       */}
 
       {user?.emailVerified &&
         !isLoginPage &&

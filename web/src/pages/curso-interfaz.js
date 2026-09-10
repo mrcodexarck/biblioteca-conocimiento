@@ -22,7 +22,7 @@ export default function CursoInterfaz() {
             <div>
               <h2>Qué es un Game Object y sus componentes</h2>
               <p>Introducción a los elementos principales que componen una escena.</p>
-              <Link to="/docs/cursos/curso-contabilidad/1-modulo-uno" className="button button--primary">
+              <Link to="/docs/cursos/curso-contabilidad/modulo-uno" className="button button--primary">
                 Abrir contenido
               </Link>
             </div>
