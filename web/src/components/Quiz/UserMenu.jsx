@@ -23,6 +23,7 @@ export default function UserMenu() {
   const [displayName, setDisplayName] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [notifications, setNotifications] = useState([]);
   const menuRef = useRef(null);
@@ -30,6 +31,8 @@ export default function UserMenu() {
   const perfilPath = useBaseUrl('/perfil');
   const loginPath = useBaseUrl('/login');
   const sugerenciasPath = useBaseUrl('/sugerencias');
+  const usuariosPath = useBaseUrl('/usuarios');
+
 
   useEffect(() => {
     let active = true;
@@ -60,7 +63,8 @@ export default function UserMenu() {
           const profileData = profileSnapshot.data();
           const firestoreName = profileData.displayName?.trim();
           if (firestoreName) setDisplayName(firestoreName);
-          setIsAdmin(profileData.role === 'admin');
+          setIsAdmin(profileData.role === 'admin' || profileData.role === 'propietario');
+          setIsOwner(profileData.role === 'propietario');
         }
       } catch (error) {
         console.error('Error cargando perfil:', error);
@@ -168,7 +172,7 @@ export default function UserMenu() {
             <div className="user-menu-header__avatar">👤</div>
             <div className="user-menu-header__info">
               <strong>{displayName || 'Usuario'}</strong>
-              <span>{isAdmin ? '🔑 Administrador' : '👤 Usuario'}</span>
+              <span>{isOwner ? '👑 Propietario' : isAdmin ? '🔑 Administrador' : '👤 Usuario'}</span>
             </div>
           </div>
 
@@ -235,6 +239,17 @@ export default function UserMenu() {
             <span className="user-menu-item__icon" aria-hidden="true">⚙️</span>
             <span>Mis datos</span>
           </a>
+          {isOwner && (
+          <a
+           href={usuariosPath}
+           className="user-menu-item"
+           role="menuitem"
+           onClick={() => setIsOpen(false)}
+          >
+            <span className="user-menu-item__icon" aria-hidden="true">👥</span>
+            <span>Usuarios</span>
+           </a>
+          )}
 
           <button
             type="button"
