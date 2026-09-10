@@ -8,7 +8,7 @@ const highlights = [
     icon: '📚',
     title: 'Cursos y talleres',
     text: 'Rutas de aprendizaje por módulos con contenido progresivo y ejercicios prácticos.',
-    url: '/Cursos',
+    url: '/Cursos/curso-contabilidad/3-modulo-tres',
   },
   {
     icon: '🧭',
