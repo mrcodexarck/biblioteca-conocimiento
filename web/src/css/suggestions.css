@@ -481,3 +481,13 @@
   background-color: #6b7280 !important;
   border-color: #4b5563 !important;
 }
+.suggestions-card__badges {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.badge--primary {
+  background: var(--ifm-color-primary);
+  color: white;
+  font-weight: 700;
+}

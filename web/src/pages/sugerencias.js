@@ -11,6 +11,8 @@ import {
   addDoc,
   query,
   orderBy,
+  runTransaction,
+  
 } from 'firebase/firestore';
 
 import { auth, db } from '../firebase';
@@ -141,10 +143,14 @@ export default function Sugerencias() {
   const currentUser = auth.currentUser;
 
   const result = suggestions.filter((s) => {
-    const matchSearch =
-      !normalizedSearch ||
-      (s.title || '').toLowerCase().includes(normalizedSearch) ||
-      (s.description || '').toLowerCase().includes(normalizedSearch);
+    // Quitar el # si el usuario lo escribe
+const searchNumber = normalizedSearch.replace('#', '');
+
+const matchSearch =
+  !normalizedSearch ||
+  String(s.number || '').includes(searchNumber) ||
+  (s.title || '').toLowerCase().includes(normalizedSearch) ||
+  (s.description || '').toLowerCase().includes(normalizedSearch);
     const matchStatus = statusFilter === 'all' || s.status === statusFilter;
     const matchCategory = categoryFilter === 'all' || s.category === categoryFilter;
     const matchMine =
@@ -205,20 +211,40 @@ export default function Sugerencias() {
     if (trimmedDesc.length > 2000) return setFormError('La descripción no puede superar los 2000 caracteres.');
     if (!category) return setFormError('Selecciona una categoría.');
 
-    setLoadingAction(true);
-    try {
-      const ref = doc(collection(db, 'suggestions'));
-      await setDoc(ref, {
-        title: trimmedTitle,
-        description: trimmedDesc,
-        category,
-        status: STATUS.PENDING,
-        authorId: user.uid,
-        authorName: user.displayName || user.email?.split('@')[0] || 'Usuario',
-        authorEmail: user.email || '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+   setLoadingAction(true);
+try {
+  const ref = doc(collection(db, 'suggestions'));
+  const counterRef = doc(db, 'metadata', 'counters');
+
+  await runTransaction(db, async (transaction) => {
+    const counterDoc = await transaction.get(counterRef);
+    let nextNumber = 1;
+
+    if (counterDoc.exists()) {
+      nextNumber = (counterDoc.data().suggestionCount || 0) + 1;
+    }
+
+    // Actualizar el contador
+    transaction.set(
+      counterRef,
+      { suggestionCount: nextNumber },
+      { merge: true }
+    );
+
+    // Crear la sugerencia con el número
+    transaction.set(ref, {
+      number: nextNumber,
+      title: trimmedTitle,
+      description: trimmedDesc,
+      category,
+      status: STATUS.PENDING,
+      authorId: user.uid,
+      authorName: user.displayName || user.email?.split('@')[0] || 'Usuario',
+      authorEmail: user.email || '',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  });
       setForm(EMPTY_FORM);
       setFormMessage('¡Sugerencia enviada! Queda pendiente de revisión.');
       await loadSuggestions();
@@ -254,13 +280,14 @@ export default function Sugerencias() {
 
       // --- Crear notificación para el autor ---
       const statusLabel = newStatus === STATUS.APPROVED ? 'aprobada' : 'rechazada';
-      await createNotification(
-        currentSuggestion.authorId,
-        suggestionId,
-        currentSuggestion.title,
-        'status_change',
-        `Tu sugerencia "${currentSuggestion.title}" fue ${statusLabel}`
-      );
+const numberLabel = `#${currentSuggestion.number || '?'}`;
+await createNotification(
+  currentSuggestion.authorId,
+  suggestionId,
+  numberLabel,
+  'status_change',
+  `Tu sugerencia ${numberLabel} fue ${statusLabel}`
+);
 
       await loadSuggestions();
     } catch (err) {
@@ -319,12 +346,12 @@ export default function Sugerencias() {
 
       // --- Crear notificación para el autor ---
       await createNotification(
-        authorId,
-        suggestionId,
-        suggestionTitle,
-        'new_reply',
-        `Un administrador respondió a tu sugerencia "${suggestionTitle}"`
-      );
+  authorId,
+  suggestionId,
+  suggestionTitle,
+  'new_reply',
+  `Un administrador respondió a tu sugerencia ${suggestionTitle}`
+);
 
       setMessageCounts(prev => ({
         ...prev,
@@ -482,16 +509,19 @@ export default function Sugerencias() {
                   <article className="suggestions-card card" key={suggestion.id}>
                     <div className="suggestions-card__body">
                       <div className="suggestions-card__top">
-                        <div>
-                          <span className="badge badge--secondary">
-                            {suggestion.category || 'General'}
-                          </span>
-                          <h2>{suggestion.title}</h2>
-                        </div>
-                        <span className={`suggestions-status suggestions-status--${suggestion.status}`}>
-                          {getStatusEmoji(suggestion.status)} {getStatusLabel(suggestion.status)}
-                        </span>
-                      </div>
+  <div>
+    <div className="suggestions-card__badges">
+      <span className="badge badge--secondary">
+        {suggestion.category || 'General'}
+      </span>
+      <span className="badge badge--primary">
+        #{suggestion.number || '?'}
+      </span>
+    </div>
+    <h2>{suggestion.title}</h2>
+  </div>
+  ...
+</div>
 
                       <p className="suggestions-card__description">{suggestion.description}</p>
 
@@ -569,7 +599,7 @@ export default function Sugerencias() {
                               />
                               <button
                                 className="button button--sm button--primary"
-                                onClick={() => sendMessage(suggestion.id, suggestion.title, suggestion.authorId)}
+                                onClick={() => sendMessage(suggestion.id, `#${suggestion.number || '?'}`, suggestion.authorId)}
                                 disabled={isSending || !currentMsgText.trim()}
                               >
                                 {isSending ? 'Enviando...' : 'Responder'}
