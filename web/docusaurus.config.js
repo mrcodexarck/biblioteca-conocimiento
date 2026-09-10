@@ -10,7 +10,7 @@ const config = {
   future: { v4: true },
 
   url: 'https://mrcodexarck.github.io',
-  baseUrl: '/biblioteca-conocimiento/',
+  baseUrl: '/',
   trailingSlash: false,
 
   organizationName: 'mrcodexarck',

@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "soporte-asistido",
+    "joan": "soporte-asistido"
+  },
+  "targets": {},
+  "etags": {}
+}
