@@ -61,7 +61,7 @@ export default function Sugerencias() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortMode, setSortMode] = useState('recent');
-  const [showAll, setShowAll] = useState(true);
+  const [showOnlyMine, setShowOnlyMine] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -148,7 +148,7 @@ export default function Sugerencias() {
     const matchStatus = statusFilter === 'all' || s.status === statusFilter;
     const matchCategory = categoryFilter === 'all' || s.category === categoryFilter;
     const matchMine =
-  showAll || (currentUser && s.authorId === currentUser.uid);
+  !showOnlyMine || (currentUser && s.authorId === currentUser.uid);
 
     return matchSearch && matchStatus && matchCategory && matchMine;
   });
@@ -164,7 +164,7 @@ export default function Sugerencias() {
   });
 
   return result;
-}, [suggestions, search, statusFilter, categoryFilter, sortMode, showAll]);
+}, [suggestions, search, statusFilter, categoryFilter, sortMode, showOnlyMine]);
 
   const stats = useMemo(() => {
     const total = suggestions.length;
@@ -385,14 +385,14 @@ export default function Sugerencias() {
   <div className="suggestions-toolbar__actions">
     <button
       type="button"
-      className={`button ${showAll ? 'button--primary' : 'button--gray'}`}
-      onClick={() => setShowAll((prev) => !prev)}
-      title={showAll ? 'Mostrando todas las sugerencias' : 'Mostrando solo mis sugerencias'}
-      aria-label={showAll ? 'Mostrando todas las sugerencias' : 'Mostrando solo mis sugerencias'}
+      className={`button ${showOnlyMine ? 'button--primary' : 'button--gray'}`}
+      onClick={() => setShowOnlyMine((prev) => !prev)}
+      title={showOnlyMine ? 'Mostrando solo mis sugerencias' : 'Mostrando todas las sugerencias'}
+      aria-label={showOnlyMine ? 'Mostrando solo mis sugerencias' : 'Mostrando todas las sugerencias'}
     >
-     {showAll ? '👥' : '👤'}
+     {showOnlyMine ? '👤' : '👥'}
     </button>
-
+    
     <button
       className="button button--primary"
       type="button"
