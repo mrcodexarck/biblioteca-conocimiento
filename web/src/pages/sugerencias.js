@@ -14,6 +14,7 @@ import {
   query,
   orderBy,
   runTransaction,
+  onSnapshot,
   
 } from 'firebase/firestore';
 
@@ -166,7 +167,7 @@ const matchSearch =
   const matchStatus = statusFilter === 'all' || s.status === statusFilter;
   const matchCategory = categoryFilter === 'all' || s.category === categoryFilter;
   const matchMine =
-    showOnlyMine || (currentUser && s.authorId === currentUser.uid);
+  !showOnlyMine || (currentUser && s.authorId === currentUser.uid);
 
   return matchSearch && matchStatus && matchCategory && matchMine;
 });
@@ -422,14 +423,14 @@ await createNotification(
 
   <div className="suggestions-toolbar__actions">
     <button
-      type="button"
-      className={`button ${showOnlyMine ? 'button--primary' : 'button--gray'}`}
-      onClick={() => setShowOnlyMine((prev) => !prev)}
-      title={showOnlyMine ? 'Mostrando solo mis sugerencias' : 'Mostrando todas las sugerencias'}
-      aria-label={showOnlyMine ? 'Mostrando solo mis sugerencias' : 'Mostrando todas las sugerencias'}
-    >
-     {showOnlyMine ? '👤' : '👥'}
-    </button>
+  type="button"
+  className={`button ${showOnlyMine ? 'button--primary' : 'button--gray'}`}
+  onClick={() => setShowOnlyMine((prev) => !prev)}
+  title={showOnlyMine ? 'Mostrando solo mis sugerencias' : 'Mostrando todas las sugerencias'}
+  aria-label={showOnlyMine ? 'Mostrando solo mis sugerencias' : 'Mostrando todas las sugerencias'}
+>
+  {showOnlyMine ? '👤' : '👥'}
+</button>
     
     <button
       className="button button--primary"
