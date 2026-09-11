@@ -869,3 +869,7 @@ body {
   text-align: center;
   font-size: 0.85rem;
 }
+/* Ocultar los enlaces de anclaje (#) en los headings */
+.hash-link {
+  display: none !important;
+}
