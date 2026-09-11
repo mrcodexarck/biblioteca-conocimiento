@@ -15,7 +15,7 @@ import {
   orderBy,
   runTransaction,
   onSnapshot,
-  
+  increment, 
 } from 'firebase/firestore';
 
 import { auth, db } from '../firebase';
@@ -82,37 +82,35 @@ export default function Sugerencias() {
   const [messageText, setMessageText] = useState({});
   const [loadingMessages, setLoadingMessages] = useState({});
   const [sendingMessage, setSendingMessage] = useState({});
-  const [messageCounts, setMessageCounts] = useState({});
 
-  async function loadSuggestions() {
-    setLoading(true);
-    setError('');
-    try {
-      const snapshot = await getDocs(collection(db, 'suggestions'));
-      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+function startSuggestionsListener() {
+  setLoading(true);
+  setError('');
+
+  const q = query(
+    collection(db, 'suggestions'),
+    orderBy('createdAt', 'desc')
+  );
+
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
       setSuggestions(data);
-
-      const counts = {};
-      await Promise.all(
-        data.map(async (suggestion) => {
-          try {
-            const messagesRef = collection(db, 'suggestions', suggestion.id, 'messages');
-            const messagesSnapshot = await getDocs(messagesRef);
-            counts[suggestion.id] = messagesSnapshot.size;
-          } catch (err) {
-            console.error(`Error contando mensajes de ${suggestion.id}:`, err);
-            counts[suggestion.id] = 0;
-          }
-        })
-      );
-      setMessageCounts(counts);
-    } catch (err) {
-      console.error(err);
-      setError('No pudimos cargar las sugerencias. Revisa tu conexión.');
-    } finally {
+      setLoading(false);
+    },
+    (err) => {
+      console.error('Error escuchando sugerencias:', err);
+      setError('No pudimos cargar las sugerencias.');
       setLoading(false);
     }
-  }
+  );
+
+  return unsubscribe;
+}
 
   async function loadUserState() {
     setAdminLoading(true);
@@ -137,10 +135,16 @@ export default function Sugerencias() {
     }
   }
 
-  useEffect(() => {
-    loadSuggestions();
-    loadUserState();
-  }, []);
+useEffect(() => {
+  const unsubscribe = startSuggestionsListener();
+  loadUserState();
+
+  return () => {
+    if (unsubscribe) {
+      unsubscribe();
+    }
+  };
+}, []);
 
   useEffect(() => {
   const params = new URLSearchParams(location.search);
@@ -255,11 +259,11 @@ try {
       authorEmail: user.email || '',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      messagesCount: 0,
     });
   });
       setForm(EMPTY_FORM);
       setFormMessage('¡Sugerencia enviada! Queda pendiente de revisión.');
-      await loadSuggestions();
       setTimeout(() => {
         setShowForm(false);
         setFormMessage('');
@@ -301,7 +305,6 @@ await createNotification(
   `Tu sugerencia ${numberLabel} fue ${statusLabel}`
 );
 
-      await loadSuggestions();
     } catch (err) {
       console.error('Error al actualizar estado:', err);
       window.alert('No se pudo actualizar el estado.');
@@ -320,20 +323,30 @@ await createNotification(
     }
   };
 
-  const loadMessages = async (suggestionId) => {
-    setLoadingMessages(prev => ({ ...prev, [suggestionId]: true }));
-    try {
-      const messagesRef = collection(db, 'suggestions', suggestionId, 'messages');
-      const q = query(messagesRef, orderBy('createdAt', 'asc'));
-      const snapshot = await getDocs(q);
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setMessages(prev => ({ ...prev, [suggestionId]: msgs }));
-    } catch (err) {
-      console.error('Error cargando mensajes:', err);
-    } finally {
-      setLoadingMessages(prev => ({ ...prev, [suggestionId]: false }));
+  const loadMessages = (suggestionId) => {
+  setLoadingMessages(prev => ({ ...prev, [suggestionId]: true }));
+
+  const messagesRef = collection(db, 'suggestions', suggestionId, 'messages');
+  const q = query(messagesRef, orderBy('createdAt', 'asc'));
+
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const msgs = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+      setMessages((prev) => ({ ...prev, [suggestionId]: msgs }));
+      setLoadingMessages((prev) => ({ ...prev, [suggestionId]: false }));
+    },
+    (err) => {
+      console.error('Error escuchando mensajes:', err);
+      setLoadingMessages((prev) => ({ ...prev, [suggestionId]: false }));
     }
-  };
+  );
+
+  return unsubscribe;
+};
 
   const sendMessage = async (suggestionId, suggestionTitle, authorId) => {
     const text = messageText[suggestionId]?.trim();
@@ -349,12 +362,19 @@ await createNotification(
     setSendingMessage(prev => ({ ...prev, [suggestionId]: true }));
     try {
       const messagesRef = collection(db, 'suggestions', suggestionId, 'messages');
-      await addDoc(messagesRef, {
-        text,
-        authorId: user.uid,
-        authorName: user.displayName || user.email?.split('@')[0] || 'Admin',
-        createdAt: serverTimestamp(),
-      });
+await addDoc(messagesRef, {
+  text,
+  authorId: user.uid,
+  authorName: user.displayName || user.email?.split('@')[0] || 'Admin',
+  createdAt: serverTimestamp(),
+});
+
+// Incrementar el contador de mensajes en la sugerencia
+const suggestionRef = doc(db, 'suggestions', suggestionId);
+await updateDoc(suggestionRef, {
+  messagesCount: increment(1),
+  updatedAt: serverTimestamp(),
+});
 
       // --- Crear notificación para el autor ---
       await createNotification(
@@ -365,10 +385,6 @@ await createNotification(
   `Un administrador respondió a tu sugerencia ${suggestionTitle}`
 );
 
-      setMessageCounts(prev => ({
-        ...prev,
-        [suggestionId]: (prev[suggestionId] || 0) + 1,
-      }));
 
       setMessageText(prev => ({ ...prev, [suggestionId]: '' }));
       await loadMessages(suggestionId);
@@ -515,7 +531,6 @@ await createNotification(
                 const isLoadingMsgs = loadingMessages[suggestion.id] || false;
                 const isSending = sendingMessage[suggestion.id] || false;
                 const currentMsgText = messageText[suggestion.id] || '';
-                const count = messageCounts[suggestion.id] ?? 0;
 
                 return (
                   <article className="suggestions-card card" key={suggestion.id}>
@@ -532,7 +547,9 @@ await createNotification(
     </div>
     <h2>{suggestion.title}</h2>
   </div>
-  ...
+  <span className={`suggestions-status suggestions-status--${suggestion.status}`}>
+    {getStatusEmoji(suggestion.status)} {getStatusLabel(suggestion.status)}
+  </span>
 </div>
 
                       <p className="suggestions-card__description">{suggestion.description}</p>
@@ -548,7 +565,7 @@ await createNotification(
                             className="button button--sm button-messages"
                             onClick={() => toggleMessages(suggestion.id)}
                           >
-                            {isExpanded ? 'Ocultar respuestas' : 'Ver respuestas'} ({count})
+                            {isExpanded ? 'Ocultar respuestas' : 'Ver respuestas'} ({suggestion.messagesCount || 0})
                           </button>
                         )}
                       </div>

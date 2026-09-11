@@ -90,17 +90,15 @@ export default function UserMenu() {
 
   // Escuchar notificaciones en tiempo real
   useEffect(() => {
-    if (!user) {
-      setNotifications([]);
-      return;
-    }
-    const unsubscribeNotifications = listenNotifications(user.uid, (notifs) => {
-      setNotifications(notifs);
-    });
-    return () => {
-      unsubscribeNotifications();
-    };
-  }, [user]);
+  if (!user) {
+    setNotifications([]);
+    return;
+  }
+  const unsubscribe = listenNotifications(user.uid, (notifs) => {
+    setNotifications(notifs);
+  });
+  return () => unsubscribe();
+}, [user]);
 
   const handleLogout = async () => {
     try {
