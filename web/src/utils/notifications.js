@@ -1,4 +1,16 @@
-import { collection, doc, addDoc, updateDoc, query, where, orderBy, getDocs, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  query,
+  where,
+  orderBy,
+  getDocs,
+  onSnapshot,
+  serverTimestamp,
+  writeBatch,
+} from 'firebase/firestore';
 import { db } from '../firebase';
 
 const NOTIFICATIONS_COLLECTION = 'notifications';
@@ -70,13 +82,19 @@ export async function markAllAsRead(userId) {
       where('read', '==', false)
     );
     const snapshot = await getDocs(q);
-    const batch = db.batch();
-    snapshot.docs.forEach(doc => {
-      batch.update(doc.ref, { read: true });
+
+    if (snapshot.empty) {
+      return;
+    }
+
+    const batch = writeBatch(db);
+    snapshot.docs.forEach((notificationDoc) => {
+      batch.update(notificationDoc.ref, { read: true });
     });
     await batch.commit();
   } catch (error) {
     console.error('Error marcando todas como leídas:', error);
+    throw error;
   }
 }
 

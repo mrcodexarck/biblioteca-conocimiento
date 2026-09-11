@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation } from '@docusaurus/router';
+
 import Layout from '@theme/Layout';
 import {
   collection,
@@ -69,6 +71,7 @@ export default function Sugerencias() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [formMessage, setFormMessage] = useState('');
   const [formError, setFormError] = useState('');
+  const location = useLocation();
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminLoading, setAdminLoading] = useState(true);
@@ -138,26 +141,35 @@ export default function Sugerencias() {
     loadUserState();
   }, []);
 
+  useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const numero = params.get('numero');
+  if (numero) {
+    // Escribe el número en el buscador (con # para que lo encuentre)
+    setSearch(`#${numero}`);
+  }
+  }, [location.search]);
+
   const filteredSuggestions = useMemo(() => {
   const normalizedSearch = search.trim().toLowerCase();
   const currentUser = auth.currentUser;
 
-  const result = suggestions.filter((s) => {
-    // Quitar el # si el usuario lo escribe
-const searchNumber = normalizedSearch.replace('#', '');
+ const result = suggestions.filter((s) => {
+  // Quitar # y espacios del texto de búsqueda para comparar con el número
+const searchNumber = normalizedSearch.replace('#', '').trim();
 
 const matchSearch =
   !normalizedSearch ||
   String(s.number || '').includes(searchNumber) ||
   (s.title || '').toLowerCase().includes(normalizedSearch) ||
   (s.description || '').toLowerCase().includes(normalizedSearch);
-    const matchStatus = statusFilter === 'all' || s.status === statusFilter;
-    const matchCategory = categoryFilter === 'all' || s.category === categoryFilter;
-    const matchMine =
-  !showOnlyMine || (currentUser && s.authorId === currentUser.uid);
+  const matchStatus = statusFilter === 'all' || s.status === statusFilter;
+  const matchCategory = categoryFilter === 'all' || s.category === categoryFilter;
+  const matchMine =
+    showOnlyMine || (currentUser && s.authorId === currentUser.uid);
 
-    return matchSearch && matchStatus && matchCategory && matchMine;
-  });
+  return matchSearch && matchStatus && matchCategory && matchMine;
+});
 
   result.sort((a, b) => {
     const aDate = a.createdAt?.toMillis?.() || 0;
@@ -171,7 +183,6 @@ const matchSearch =
 
   return result;
 }, [suggestions, search, statusFilter, categoryFilter, sortMode, showOnlyMine]);
-
   const stats = useMemo(() => {
     const total = suggestions.length;
     const pending = suggestions.filter(s => s.status === STATUS.PENDING).length;

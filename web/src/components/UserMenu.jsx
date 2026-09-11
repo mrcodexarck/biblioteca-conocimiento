@@ -119,19 +119,22 @@ export default function UserMenu() {
       }
       setIsOpen(false);
       // Redirigir a sugerencias con el ID de la sugerencia (puedes usar un hash o query param)
-      window.location.href = `${sugerenciasPath}?highlight=${notification.suggestionId}`;
+      const numero = (notification.suggestionTitle || '').replace('#', '').trim();
+      window.location.href = `${sugerenciasPath}?numero=${numero}`;
     } catch (error) {
       console.error('Error al manejar notificación:', error);
     }
   };
 
   const handleMarkAllAsRead = async () => {
-    try {
-      await markAllAsRead(user.uid);
-    } catch (error) {
-      console.error('Error marcando todas como leídas:', error);
-    }
-  };
+  try {
+    await markAllAsRead(user.uid);
+    setNotifications([]); // Limpia localmente sin esperar al listener
+  } catch (error) {
+    console.error('Error marcando todas como leídas:', error);
+    window.alert('No se pudieron marcar como leídas. Inténtalo de nuevo.');
+  }
+};
 
   if (loadingProfile && !user) {
     return <div className="user-menu-loading">Cargando…</div>;
@@ -212,7 +215,7 @@ export default function UserMenu() {
                         {notif.message}
                       </div>
                       <div className="user-menu-notification-suggestion">
-                        {notif.suggestionTitle}
+                        {/*notif.suggestionTitle*/}
                       </div>
                     </div>
                   </button>
