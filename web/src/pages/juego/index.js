@@ -3,23 +3,30 @@ import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import { auth } from '@site/src/firebase';
-import { getProgress } from '@site/src/utils/juego/storage';
+import { getProgress, getPlayerStats } from '@site/src/utils/juego/storage';
 import '../../css/juego.css';
 
-const CASE_ID = 'case-001';
+function getRankLabel(xp) {
+  if (xp >= 2000) return '🏆 Maestro';
+  if (xp >= 1000) return '🥇 Experto';
+  if (xp >= 500) return '🥈 Detective';
+  if (xp >= 100) return '🥉 Novato';
+  return '👤 Aprendiz';
+}
 
 export default function Juego() {
   const [pendingCase, setPendingCase] = useState(null);
-  const [loadingProgress, setLoadingProgress] = useState(true);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       const user = auth.currentUser;
-      if (!user) {
-        setLoadingProgress(false);
-        return;
-      }
-      const p = await getProgress(user.uid, CASE_ID);
+      if (!user) return;
+
+      const s = await getPlayerStats(user.uid);
+      setStats(s);
+
+      const p = await getProgress(user.uid, 'case-001');
       if (p && p.status === 'in_progress') {
         setPendingCase({
           caseTitle: p.caseTitle || 'Caso en curso',
@@ -27,44 +34,24 @@ export default function Juego() {
           discovered: (p.discoveredItems || []).length,
         });
       }
-      setLoadingProgress(false);
     };
     load();
   }, []);
 
   const cards = [
-// Reemplaza la tarjeta "Nueva partida"
-{
-  icon: '🎮',
-  title: 'Nueva partida',
-  text: 'Comienza un nuevo caso desde cero.',
-  to: '/juego/casos', // Nueva ruta para seleccionar caso
-  disabled: false,
-},
+    { icon: '🎮', title: 'Nueva partida', text: 'Elige un caso para investigar.', to: '/juego/casos', disabled: false },
     {
       icon: '📁',
       title: 'Continuar',
       text: pendingCase
-        ? `Retomar "${pendingCase.caseTitle}" — ${pendingCase.discovered} pistas encontradas`
+        ? `Retomar "${pendingCase.caseTitle}" — ${pendingCase.discovered} pistas`
         : 'No hay casos en curso.',
       to: '/juego/nueva-partida?resume=1',
       disabled: !pendingCase,
       highlight: Boolean(pendingCase),
     },
-    {
-      icon: '🏆',
-      title: 'Logros',
-      text: 'Revisa tus medallas y progreso.',
-      to: '/juego/logros',
-      disabled: true,
-    },
-    {
-      icon: '⚙️',
-      title: 'Opciones',
-      text: 'Ajustes de sonido, dificultad y más.',
-      to: '/juego/opciones',
-      disabled: true,
-    },
+    { icon: '🏆', title: 'Logros', text: 'Ranking de detectives y medallas.', to: '/juego/logros', disabled: false },
+    { icon: '⚙️', title: 'Opciones', text: 'Ajustes de sonido, dificultad y más.', to: '/juego/opciones', disabled: true },
   ];
 
   return (
@@ -77,35 +64,56 @@ export default function Juego() {
             <p>Elige qué hacer a continuación.</p>
           </header>
 
+          {stats && (
+            <section className="player-summary">
+              <div className="player-summary__item">
+                <span className="player-summary__icon">⭐</span>
+                <div>
+                  <div className="player-summary__label">Puntos totales</div>
+                  <div className="player-summary__value">{stats.xp || 0}</div>
+                </div>
+              </div>
+              <div className="player-summary__item">
+                <span className="player-summary__icon">🔍</span>
+                <div>
+                  <div className="player-summary__label">Casos resueltos</div>
+                  <div className="player-summary__value">
+                    {(stats.completedCases || []).length} / 4
+                  </div>
+                </div>
+              </div>
+              <div className="player-summary__item">
+                <span className="player-summary__icon">🏅</span>
+                <div>
+                  <div className="player-summary__label">Rango</div>
+                  <div className="player-summary__value">
+                    {getRankLabel(stats.xp || 0)}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
           <section className="juego-grid">
             {cards.map((card) => {
               const url = useBaseUrl(card.to);
-              const isDisabled = card.disabled;
-
-              if (isDisabled) {
+              if (card.disabled) {
                 return (
                   <div key={card.title} className="juego-card juego-card--disabled">
-                    <div className="juego-card__icon" aria-hidden="true">
-                      {card.icon}
-                    </div>
+                    <div className="juego-card__icon">{card.icon}</div>
                     <h2>{card.title}</h2>
                     <p>{card.text}</p>
                     <span className="juego-card__badge">Próximamente</span>
                   </div>
                 );
               }
-
               return (
                 <Link
                   key={card.title}
                   to={url}
-                  className={`juego-card ${
-                    card.highlight ? 'juego-card--highlight' : ''
-                  }`}
+                  className={`juego-card ${card.highlight ? 'juego-card--highlight' : ''}`}
                 >
-                  <div className="juego-card__icon" aria-hidden="true">
-                    {card.icon}
-                  </div>
+                  <div className="juego-card__icon">{card.icon}</div>
                   <h2>{card.title}</h2>
                   <p>{card.text}</p>
                   {card.highlight && (

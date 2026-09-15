@@ -12,6 +12,8 @@ import {
   getProgress,
   saveProgress,
   clearProgress,
+  registerCaseWin,
+  calculatePoints,
 } from '@site/src/utils/juego/storage';
 import '../../css/juego.css';
 
@@ -21,7 +23,7 @@ const STEP = {
   ACCUSATION: 'accusation',
 };
 
-const TOTAL_DURATION = 15 * 60; // 15 minutos
+const TOTAL_DURATION = 15 * 60;
 
 function formatTime(seconds) {
   const m = String(Math.floor(seconds / 60)).padStart(2, '0');
@@ -30,17 +32,11 @@ function formatTime(seconds) {
 }
 
 export default function NuevaPartida() {
-  /* =========================================================
-     RUTA Y CASO
-     ========================================================= */
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const caseId = params.get('case') || 'case-001';
   const caseData = getCaseById(caseId);
 
-  /* =========================================================
-     ESTADOS
-     ========================================================= */
   const [step, setStep] = useState(STEP.BRIEFING);
   const [currentScene, setCurrentScene] = useState(0);
   const [discoveredItems, setDiscoveredItems] = useState([]);
@@ -51,18 +47,13 @@ export default function NuevaPartida() {
   const [timeLeft, setTimeLeft] = useState(TOTAL_DURATION);
   const [isPaused, setIsPaused] = useState(false);
   const [elapsedBefore, setElapsedBefore] = useState(0);
+  const [pointsEarned, setPointsEarned] = useState(0);
 
-  /* =========================================================
-     TIEMPO TOTAL INVERTIDO
-     ========================================================= */
   const totalElapsed = useMemo(() => {
     const currentSessionElapsed = TOTAL_DURATION - timeLeft;
     return elapsedBefore + currentSessionElapsed;
   }, [timeLeft, elapsedBefore]);
 
-  /* =========================================================
-     CARGAR PROGRESO (si venimos de "Continuar")
-     ========================================================= */
   useEffect(() => {
     const load = async () => {
       const isResume = params.get('resume') === '1';
@@ -76,12 +67,8 @@ export default function NuevaPartida() {
             setDiscoveredItems(saved.discoveredItems || []);
             setAnalyzedItems(saved.analyzedItems || []);
             setInterrogatedSuspects(saved.interrogatedSuspects || []);
-            if (typeof saved.timeLeft === 'number') {
-              setTimeLeft(saved.timeLeft);
-            }
-            if (typeof saved.elapsedBefore === 'number') {
-              setElapsedBefore(saved.elapsedBefore);
-            }
+            if (typeof saved.timeLeft === 'number') setTimeLeft(saved.timeLeft);
+            if (typeof saved.elapsedBefore === 'number') setElapsedBefore(saved.elapsedBefore);
           }
         }
       }
@@ -91,9 +78,6 @@ export default function NuevaPartida() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search, caseData.id]);
 
-  /* =========================================================
-     GUARDAR PROGRESO
-     ========================================================= */
   useEffect(() => {
     if (!loaded) return;
     if (result === 'win') return;
@@ -136,18 +120,12 @@ export default function NuevaPartida() {
     elapsedBefore,
   ]);
 
-  /* =========================================================
-     TIMER — SE ACABÓ EL TIEMPO
-     ========================================================= */
   useEffect(() => {
     if (timeLeft <= 0 && step === STEP.INVESTIGATION && !result) {
       setResult('timeout');
     }
   }, [timeLeft, step, result]);
 
-  /* =========================================================
-     HANDLERS
-     ========================================================= */
   const handleDiscover = (itemId) => {
     if (!discoveredItems.includes(itemId)) {
       setDiscoveredItems([...discoveredItems, itemId]);
@@ -173,9 +151,25 @@ export default function NuevaPartida() {
     );
 
     if (isGuilty && hasEvidence) {
+      const earned = calculatePoints(totalElapsed, caseData.difficulty);
+      setPointsEarned(earned);
       setResult('win');
+
       const user = auth.currentUser;
-      if (user) clearProgress(user.uid, caseData.id);
+      if (user) {
+        const timeUsed = totalElapsed;
+        const userName =
+          user.displayName || user.email?.split('@')[0] || 'Detective';
+        clearProgress(user.uid, caseData.id);
+        registerCaseWin(
+          user.uid,
+          userName,
+          caseData.id,
+          caseData.title,
+          timeUsed,
+          caseData.difficulty
+        );
+      }
     } else if (isGuilty && !hasEvidence) {
       setResult('need_evidence');
     } else {
@@ -196,11 +190,9 @@ export default function NuevaPartida() {
     setTimeLeft(TOTAL_DURATION);
     setElapsedBefore(0);
     setIsPaused(false);
+    setPointsEarned(0);
   };
 
-  /* =========================================================
-     PANTALLA DE CARGA
-     ========================================================= */
   if (!loaded) {
     return (
       <Layout title="Cargando...">
@@ -213,9 +205,6 @@ export default function NuevaPartida() {
     );
   }
 
-  /* =========================================================
-     BRIEFING
-     ========================================================= */
   if (step === STEP.BRIEFING) {
     return (
       <Layout title="Nueva partida">
@@ -263,9 +252,6 @@ export default function NuevaPartida() {
     );
   }
 
-  /* =========================================================
-     INVESTIGACIÓN
-     ========================================================= */
   const scene = caseData.scenes[currentScene];
 
   return (
@@ -277,6 +263,7 @@ export default function NuevaPartida() {
               <span className="juego-eyebrow">CASO EN CURSO</span>
               <h1>{caseData.title}</h1>
             </div>
+
             <div className="case-header__right">
               <div className="case-header__time-total">
                 <span className="case-header__time-label">⏳ Total:</span>
@@ -286,8 +273,9 @@ export default function NuevaPartida() {
               </div>
 
               <GameTimer
-                duration={timeLeft}
-                isPaused={isPaused}
+                timeLeft={timeLeft}
+                setTimeLeft={setTimeLeft}
+                isPaused={isPaused || Boolean(result)}
                 onTimeUp={() => setResult('timeout')}
               />
 
@@ -297,6 +285,7 @@ export default function NuevaPartida() {
               >
                 {isPaused ? 'Reanudar' : 'Pausar'}
               </button>
+
               <button
                 className="button button--outline button--sm"
                 onClick={resetCase}
@@ -351,7 +340,6 @@ export default function NuevaPartida() {
             </aside>
           </div>
 
-          {/* Modal de acusación */}
           {step === STEP.ACCUSATION && !result && (
             <div
               className="modal-overlay"
@@ -387,7 +375,6 @@ export default function NuevaPartida() {
             </div>
           )}
 
-          {/* Modal de resultado */}
           {result && (
             <div className="modal-overlay">
               <div className="modal-box">
@@ -403,8 +390,11 @@ export default function NuevaPartida() {
                     <p>
                       <strong>Tiempo total:</strong> {formatTime(totalElapsed)}
                     </p>
-                    <p>
-                      Has ganado <strong>+150 XP</strong>.
+                    <p style={{ fontSize: '1.1rem' }}>
+                      ⭐ Has ganado{' '}
+                      <strong style={{ color: '#f59e0b' }}>
+                        +{pointsEarned} puntos
+                      </strong>
                     </p>
                     <div className="modal-actions">
                       <Link to="/juego" className="button button--primary">
@@ -464,10 +454,7 @@ export default function NuevaPartida() {
                     <h2 className="modal-result modal-result--wrong">
                       ⏰ ¡Se acabó el tiempo!
                     </h2>
-                    <p>
-                      El culpable se ha escapado. Debes ser más rápido la
-                      próxima vez.
-                    </p>
+                    <p>El culpable se ha escapado. Sé más rápido la próxima vez.</p>
                     <button className="button button--primary" onClick={resetCase}>
                       Intentar de nuevo
                     </button>
