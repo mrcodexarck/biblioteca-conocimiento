@@ -502,3 +502,34 @@
   color: var(--ifm-color-primary);
   font-weight: 800;
 }
+.game-timer {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background: var(--ifm-background-surface-color);
+  border: 2px solid var(--site-border);
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  font-family: monospace;
+  transition: all 0.3s ease;
+}
+
+.game-timer--warning {
+  border-color: #dc2626;
+  color: #dc2626;
+  animation: pulse-warning 1s infinite;
+}
+
+@keyframes pulse-warning {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.case-header__right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}

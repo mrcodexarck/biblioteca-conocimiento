@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import { useLocation } from '@docusaurus/router';
 import CaseScene from '@site/src/components/juego/CaseScene';
 import Inventory from '@site/src/components/juego/Inventory';
 import SuspectsList from '@site/src/components/juego/SuspectsList';
-import { CASE_001 } from '@site/src/utils/juego/case-001';
+import GameTimer from '@site/src/components/juego/GameTimer';
+import { getCaseById } from '@site/src/utils/juego/cases';
 import { auth } from '@site/src/firebase';
 import {
   getProgress,
@@ -20,10 +21,26 @@ const STEP = {
   ACCUSATION: 'accusation',
 };
 
-export default function NuevaPartida() {
-  const location = useLocation();
-  const caseData = CASE_001;
+const TOTAL_DURATION = 15 * 60; // 15 minutos
 
+function formatTime(seconds) {
+  const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const s = String(seconds % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+export default function NuevaPartida() {
+  /* =========================================================
+     RUTA Y CASO
+     ========================================================= */
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const caseId = params.get('case') || 'case-001';
+  const caseData = getCaseById(caseId);
+
+  /* =========================================================
+     ESTADOS
+     ========================================================= */
   const [step, setStep] = useState(STEP.BRIEFING);
   const [currentScene, setCurrentScene] = useState(0);
   const [discoveredItems, setDiscoveredItems] = useState([]);
@@ -31,77 +48,105 @@ export default function NuevaPartida() {
   const [interrogatedSuspects, setInterrogatedSuspects] = useState([]);
   const [result, setResult] = useState(null);
   const [loaded, setLoaded] = useState(false);
-
-  const scene = caseData.scenes[currentScene];
+  const [timeLeft, setTimeLeft] = useState(TOTAL_DURATION);
+  const [isPaused, setIsPaused] = useState(false);
+  const [elapsedBefore, setElapsedBefore] = useState(0);
 
   /* =========================================================
-     Cargar progreso (solo si venimos de "Continuar")
+     TIEMPO TOTAL INVERTIDO
      ========================================================= */
-useEffect(() => {
-  const load = async () => {
-    const params = new URLSearchParams(location.search);
-    const resume = params.get('resume') === '1';
+  const totalElapsed = useMemo(() => {
+    const currentSessionElapsed = TOTAL_DURATION - timeLeft;
+    return elapsedBefore + currentSessionElapsed;
+  }, [timeLeft, elapsedBefore]);
 
-    if (resume) {
-      const user = auth.currentUser;
-      if (user) {
-        const saved = await getProgress(user.uid, caseData.id);
-        if (saved) {
-          setStep(saved.step || STEP.INVESTIGATION);
-          setCurrentScene(saved.currentScene ?? 0);
-          setDiscoveredItems(saved.discoveredItems || []);
-          setAnalyzedItems(saved.analyzedItems || []);
-          setInterrogatedSuspects(saved.interrogatedSuspects || []);
+  /* =========================================================
+     CARGAR PROGRESO (si venimos de "Continuar")
+     ========================================================= */
+  useEffect(() => {
+    const load = async () => {
+      const isResume = params.get('resume') === '1';
+      if (isResume) {
+        const user = auth.currentUser;
+        if (user) {
+          const saved = await getProgress(user.uid, caseData.id);
+          if (saved) {
+            setStep(saved.step || STEP.INVESTIGATION);
+            setCurrentScene(saved.currentScene ?? 0);
+            setDiscoveredItems(saved.discoveredItems || []);
+            setAnalyzedItems(saved.analyzedItems || []);
+            setInterrogatedSuspects(saved.interrogatedSuspects || []);
+            if (typeof saved.timeLeft === 'number') {
+              setTimeLeft(saved.timeLeft);
+            }
+            if (typeof saved.elapsedBefore === 'number') {
+              setElapsedBefore(saved.elapsedBefore);
+            }
+          }
         }
       }
-    }
-    setLoaded(true);
-  };
-  load();
-}, [location.search, caseData.id]);
+      setLoaded(true);
+    };
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search, caseData.id]);
 
   /* =========================================================
-     Guardar progreso en cada cambio
+     GUARDAR PROGRESO
      ========================================================= */
-useEffect(() => {
-  if (!loaded) return;
-  if (result === 'win') return;
+  useEffect(() => {
+    if (!loaded) return;
+    if (result === 'win') return;
 
-  const user = auth.currentUser;
-  if (!user) return;
+    const user = auth.currentUser;
+    if (!user) return;
 
-  const hasStarted =
-    step !== STEP.BRIEFING ||
-    discoveredItems.length > 0 ||
-    analyzedItems.length > 0 ||
-    interrogatedSuspects.length > 0;
+    const hasStarted =
+      step !== STEP.BRIEFING ||
+      discoveredItems.length > 0 ||
+      analyzedItems.length > 0 ||
+      interrogatedSuspects.length > 0;
 
-  if (!hasStarted) return;
+    if (!hasStarted) return;
 
-  saveProgress(user.uid, {
-    caseId: caseData.id,
-    caseTitle: caseData.title,
-    status: 'in_progress',
+    saveProgress(user.uid, {
+      caseId: caseData.id,
+      caseTitle: caseData.title,
+      status: 'in_progress',
+      step,
+      currentScene,
+      discoveredItems,
+      analyzedItems,
+      interrogatedSuspects,
+      timeLeft,
+      elapsedBefore,
+      savedAt: Date.now(),
+    });
+  }, [
+    loaded,
     step,
     currentScene,
     discoveredItems,
     analyzedItems,
     interrogatedSuspects,
-  });
-}, [
-  loaded,
-  step,
-  currentScene,
-  discoveredItems,
-  analyzedItems,
-  interrogatedSuspects,
-  result,
-  caseData.id,
-  caseData.title,
-]);
+    result,
+    caseData.id,
+    caseData.title,
+    timeLeft,
+    elapsedBefore,
+  ]);
 
   /* =========================================================
-     Handlers
+     TIMER — SE ACABÓ EL TIEMPO
+     ========================================================= */
+  useEffect(() => {
+    if (timeLeft <= 0 && step === STEP.INVESTIGATION && !result) {
+      setResult('timeout');
+    }
+  }, [timeLeft, step, result]);
+
+  /* =========================================================
+     HANDLERS
      ========================================================= */
   const handleDiscover = (itemId) => {
     if (!discoveredItems.includes(itemId)) {
@@ -121,35 +166,41 @@ useEffect(() => {
     }
   };
 
-const handleAccuse = (suspectId) => {
-  const isGuilty = suspectId === caseData.solution.guiltyId;
-  const hasEvidence = caseData.solution.requiredEvidence.every((e) =>
-    analyzedItems.includes(e)
-  );
+  const handleAccuse = (suspectId) => {
+    const isGuilty = suspectId === caseData.solution.guiltyId;
+    const hasEvidence = caseData.solution.requiredEvidence.every((e) =>
+      analyzedItems.includes(e)
+    );
 
-  if (isGuilty && hasEvidence) {
-    setResult('win');
+    if (isGuilty && hasEvidence) {
+      setResult('win');
+      const user = auth.currentUser;
+      if (user) clearProgress(user.uid, caseData.id);
+    } else if (isGuilty && !hasEvidence) {
+      setResult('need_evidence');
+    } else {
+      setResult('wrong');
+    }
+  };
+
+  const resetCase = () => {
     const user = auth.currentUser;
     if (user) clearProgress(user.uid, caseData.id);
-  } else if (isGuilty && !hasEvidence) {
-    setResult('need_evidence');
-  } else {
-    setResult('wrong');
-  }
-};
 
-const resetCase = () => {
-  const user = auth.currentUser;
-  if (user) clearProgress(user.uid, caseData.id);
+    setStep(STEP.BRIEFING);
+    setCurrentScene(0);
+    setDiscoveredItems([]);
+    setAnalyzedItems([]);
+    setInterrogatedSuspects([]);
+    setResult(null);
+    setTimeLeft(TOTAL_DURATION);
+    setElapsedBefore(0);
+    setIsPaused(false);
+  };
 
-  setStep(STEP.BRIEFING);
-  setCurrentScene(0);
-  setDiscoveredItems([]);
-  setAnalyzedItems([]);
-  setInterrogatedSuspects([]);
-  setResult(null);
-};
-
+  /* =========================================================
+     PANTALLA DE CARGA
+     ========================================================= */
   if (!loaded) {
     return (
       <Layout title="Cargando...">
@@ -213,8 +264,10 @@ const resetCase = () => {
   }
 
   /* =========================================================
-     INVESTIGATION
+     INVESTIGACIÓN
      ========================================================= */
+  const scene = caseData.scenes[currentScene];
+
   return (
     <Layout title={caseData.title}>
       <main className="juego-page">
@@ -224,12 +277,33 @@ const resetCase = () => {
               <span className="juego-eyebrow">CASO EN CURSO</span>
               <h1>{caseData.title}</h1>
             </div>
-            <button
-              className="button button--outline button--sm"
-              onClick={resetCase}
-            >
-              Reiniciar caso
-            </button>
+            <div className="case-header__right">
+              <div className="case-header__time-total">
+                <span className="case-header__time-label">⏳ Total:</span>
+                <span className="case-header__time-value">
+                  {formatTime(totalElapsed)}
+                </span>
+              </div>
+
+              <GameTimer
+                duration={timeLeft}
+                isPaused={isPaused}
+                onTimeUp={() => setResult('timeout')}
+              />
+
+              <button
+                className="button button--outline button--sm"
+                onClick={() => setIsPaused(!isPaused)}
+              >
+                {isPaused ? 'Reanudar' : 'Pausar'}
+              </button>
+              <button
+                className="button button--outline button--sm"
+                onClick={resetCase}
+              >
+                Reiniciar caso
+              </button>
+            </div>
           </header>
 
           <div className="scene-tabs">
@@ -277,6 +351,7 @@ const resetCase = () => {
             </aside>
           </div>
 
+          {/* Modal de acusación */}
           {step === STEP.ACCUSATION && !result && (
             <div
               className="modal-overlay"
@@ -312,6 +387,7 @@ const resetCase = () => {
             </div>
           )}
 
+          {/* Modal de resultado */}
           {result && (
             <div className="modal-overlay">
               <div className="modal-box">
@@ -323,6 +399,9 @@ const resetCase = () => {
                     <p>
                       Has identificado correctamente al culpable con la
                       evidencia suficiente.
+                    </p>
+                    <p>
+                      <strong>Tiempo total:</strong> {formatTime(totalElapsed)}
                     </p>
                     <p>
                       Has ganado <strong>+150 XP</strong>.
@@ -376,6 +455,21 @@ const resetCase = () => {
                       }}
                     >
                       Seguir investigando
+                    </button>
+                  </>
+                )}
+
+                {result === 'timeout' && (
+                  <>
+                    <h2 className="modal-result modal-result--wrong">
+                      ⏰ ¡Se acabó el tiempo!
+                    </h2>
+                    <p>
+                      El culpable se ha escapado. Debes ser más rápido la
+                      próxima vez.
+                    </p>
+                    <button className="button button--primary" onClick={resetCase}>
+                      Intentar de nuevo
                     </button>
                   </>
                 )}

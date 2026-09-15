@@ -33,13 +33,14 @@ export default function Juego() {
   }, []);
 
   const cards = [
-    {
-      icon: '🎮',
-      title: 'Nueva partida',
-      text: 'Comienza un nuevo caso desde cero.',
-      to: '/juego/nueva-partida',
-      disabled: false,
-    },
+// Reemplaza la tarjeta "Nueva partida"
+{
+  icon: '🎮',
+  title: 'Nueva partida',
+  text: 'Comienza un nuevo caso desde cero.',
+  to: '/juego/casos', // Nueva ruta para seleccionar caso
+  disabled: false,
+},
     {
       icon: '📁',
       title: 'Continuar',
