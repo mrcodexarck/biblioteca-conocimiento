@@ -63,10 +63,10 @@ const highlights = [
     icon: '💡',
 
     title:
-      'Juego prueba',
+      'Busqueda criminal.',
 
     text:
-      'Prueba de pagina web juego.',
+      'Pon a prueba tus habilidades de investigacion y observacion con unos casos en los cuales unas pisas te llevaran a la respuesta.',
 
     url:
       '/juego',
