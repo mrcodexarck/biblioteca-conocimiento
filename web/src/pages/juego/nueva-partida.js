@@ -23,7 +23,7 @@ const STEP = {
   ACCUSATION: 'accusation',
 };
 
-const TOTAL_DURATION = 15 * 60;
+const TOTAL_DURATION = 15 * 60; // 15 minutos
 
 function formatTime(seconds) {
   const m = String(Math.floor(seconds / 60)).padStart(2, '0');
@@ -32,11 +32,17 @@ function formatTime(seconds) {
 }
 
 export default function NuevaPartida() {
+  /* =========================================================
+     RUTA Y CASO
+     ========================================================= */
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const caseId = params.get('case') || 'case-001';
   const caseData = getCaseById(caseId);
 
+  /* =========================================================
+     ESTADOS
+     ========================================================= */
   const [step, setStep] = useState(STEP.BRIEFING);
   const [currentScene, setCurrentScene] = useState(0);
   const [discoveredItems, setDiscoveredItems] = useState([]);
@@ -49,11 +55,17 @@ export default function NuevaPartida() {
   const [elapsedBefore, setElapsedBefore] = useState(0);
   const [pointsEarned, setPointsEarned] = useState(0);
 
+  /* =========================================================
+     TIEMPO TOTAL INVERTIDO
+     ========================================================= */
   const totalElapsed = useMemo(() => {
     const currentSessionElapsed = TOTAL_DURATION - timeLeft;
     return elapsedBefore + currentSessionElapsed;
   }, [timeLeft, elapsedBefore]);
 
+  /* =========================================================
+     CARGAR PROGRESO (si venimos de "Continuar")
+     ========================================================= */
   useEffect(() => {
     const load = async () => {
       const isResume = params.get('resume') === '1';
@@ -67,8 +79,12 @@ export default function NuevaPartida() {
             setDiscoveredItems(saved.discoveredItems || []);
             setAnalyzedItems(saved.analyzedItems || []);
             setInterrogatedSuspects(saved.interrogatedSuspects || []);
-            if (typeof saved.timeLeft === 'number') setTimeLeft(saved.timeLeft);
-            if (typeof saved.elapsedBefore === 'number') setElapsedBefore(saved.elapsedBefore);
+            if (typeof saved.timeLeft === 'number') {
+              setTimeLeft(saved.timeLeft);
+            }
+            if (typeof saved.elapsedBefore === 'number') {
+              setElapsedBefore(saved.elapsedBefore);
+            }
           }
         }
       }
@@ -78,6 +94,9 @@ export default function NuevaPartida() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search, caseData.id]);
 
+  /* =========================================================
+     GUARDAR PROGRESO
+     ========================================================= */
   useEffect(() => {
     if (!loaded) return;
     if (result === 'win') return;
@@ -120,12 +139,18 @@ export default function NuevaPartida() {
     elapsedBefore,
   ]);
 
+  /* =========================================================
+     TIMER — SE ACABÓ EL TIEMPO
+     ========================================================= */
   useEffect(() => {
     if (timeLeft <= 0 && step === STEP.INVESTIGATION && !result) {
       setResult('timeout');
     }
   }, [timeLeft, step, result]);
 
+  /* =========================================================
+     HANDLERS
+     ========================================================= */
   const handleDiscover = (itemId) => {
     if (!discoveredItems.includes(itemId)) {
       setDiscoveredItems([...discoveredItems, itemId]);
@@ -193,6 +218,9 @@ export default function NuevaPartida() {
     setPointsEarned(0);
   };
 
+  /* =========================================================
+     PANTALLA DE CARGA
+     ========================================================= */
   if (!loaded) {
     return (
       <Layout title="Cargando...">
@@ -205,6 +233,9 @@ export default function NuevaPartida() {
     );
   }
 
+  /* =========================================================
+     BRIEFING
+     ========================================================= */
   if (step === STEP.BRIEFING) {
     return (
       <Layout title="Nueva partida">
@@ -252,7 +283,13 @@ export default function NuevaPartida() {
     );
   }
 
+  /* =========================================================
+     INVESTIGACIÓN
+     ========================================================= */
   const scene = caseData.scenes[currentScene];
+  const totalItems = caseData.items.length;
+  const foundItems = discoveredItems.length;
+  const allFound = foundItems >= totalItems;
 
   return (
     <Layout title={caseData.title}>
@@ -295,6 +332,7 @@ export default function NuevaPartida() {
             </div>
           </header>
 
+          {/* Tabs de escenas */}
           <div className="scene-tabs">
             {caseData.scenes.map((s, i) => (
               <button
@@ -330,16 +368,26 @@ export default function NuevaPartida() {
                 interrogatedSuspects={interrogatedSuspects}
                 onInterrogate={handleInterrogate}
               />
+
+              {/* Botón de acusar (bloqueado hasta tener todas las pistas) */}
               <button
                 className="accuse-button"
-                disabled={discoveredItems.length === 0}
+                disabled={!allFound}
                 onClick={() => setStep(STEP.ACCUSATION)}
+                title={
+                  !allFound
+                    ? `Encuentra todas las pistas (${foundItems}/${totalItems})`
+                    : 'Acusar al culpable'
+                }
               >
-                ⚖️ Acusar
+                {allFound
+                  ? '⚖️ Acusar'
+                  : `⚖️ Acusar (${foundItems}/${totalItems} pistas)`}
               </button>
             </aside>
           </div>
 
+          {/* Modal de acusación */}
           {step === STEP.ACCUSATION && !result && (
             <div
               className="modal-overlay"
@@ -375,6 +423,7 @@ export default function NuevaPartida() {
             </div>
           )}
 
+          {/* Modal de resultado */}
           {result && (
             <div className="modal-overlay">
               <div className="modal-box">
@@ -454,8 +503,14 @@ export default function NuevaPartida() {
                     <h2 className="modal-result modal-result--wrong">
                       ⏰ ¡Se acabó el tiempo!
                     </h2>
-                    <p>El culpable se ha escapado. Sé más rápido la próxima vez.</p>
-                    <button className="button button--primary" onClick={resetCase}>
+                    <p>
+                      El culpable se ha escapado. Debes ser más rápido la
+                      próxima vez.
+                    </p>
+                    <button
+                      className="button button--primary"
+                      onClick={resetCase}
+                    >
                       Intentar de nuevo
                     </button>
                   </>

@@ -911,4 +911,58 @@
     padding: 0.6rem 0.7rem;
     font-size: 0.85rem;
   }
+}/* =========================================================
+   ITEM ACTIVO DEL INVENTARIO
+   ========================================================= */
+.inventory-item--active {
+  background: rgba(46, 133, 85, 0.15);
+  border-left: 3px solid var(--ifm-color-primary);
+}
+
+/* =========================================================
+   CAJA DE ANÁLISIS MEJORADA
+   ========================================================= */
+.analysis-box__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
+  border-bottom: 1px solid var(--site-border);
+  font-size: 0.9rem;
+}
+
+.analysis-box__icon {
+  font-size: 1.2rem;
+}
+
+.analysis-box__header strong {
+  flex: 1;
+}
+
+.analysis-box__close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--site-muted);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s;
+}
+
+.analysis-box__close:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--ifm-color-primary);
+}
+
+.analysis-box__status {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+  color: var(--site-muted);
+  font-style: italic;
 }
