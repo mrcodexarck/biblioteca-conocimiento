@@ -12,6 +12,8 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 import { onIdTokenChanged } from 'firebase/auth';
 
+import BackButton from '@site/src/components/BackButton';
+
 import { createPortal } from 'react-dom';
 
 import { auth } from '@site/src/firebase';
@@ -433,6 +435,10 @@ export default function Root({
           : 'app-usuario-desconectado'
       }
     >
+
+    <BackButton />     {/* ← NUEVO */}
+
+
       {children}
 
       {user?.emailVerified &&
