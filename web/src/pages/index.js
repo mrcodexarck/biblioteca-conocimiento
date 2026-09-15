@@ -59,6 +59,18 @@ const highlights = [
     url:
       '/sugerencias',
   },
+  {
+    icon: '💡',
+
+    title:
+      'Juego prueba',
+
+    text:
+      'Prueba de pagina web juego.',
+
+    url:
+      '/juego',
+  },
 
 ];
 
