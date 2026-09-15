@@ -173,3 +173,26 @@ const CASE_XP = {
 export function getCaseXP(caseId) {
   return CASE_XP[caseId] || 500;
 }
+/* =========================================================
+   PISTAS DEL ASESINO SERIAL
+   ========================================================= */
+export async function saveSerialKillerClue(userId, caseId, attribute, value, text) {
+  if (!userId) return;
+  try {
+    const ref = doc(db, 'users', userId, 'gameStats', 'main');
+    const snap = await getDoc(ref);
+    const current = snap.exists() ? snap.data() : {};
+    const clues = current.serialClues || [];
+
+    if (!clues.some((c) => c.caseId === caseId)) {
+      clues.push({ caseId, attribute, value, text, discoveredAt: Date.now() });
+      await setDoc(
+        ref,
+        { serialClues: clues, updatedAt: serverTimestamp() },
+        { merge: true }
+      );
+    }
+  } catch (err) {
+    console.error('Error guardando pista serial:', err);
+  }
+}

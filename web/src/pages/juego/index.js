@@ -4,6 +4,9 @@ import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import { auth } from '@site/src/firebase';
 import { getProgress, getPlayerStats } from '@site/src/utils/juego/storage';
+import { ALL_CASES } from '@site/src/utils/juego/cases';
+import { getKnownClues, TOTAL_CASES } from '@site/src/utils/juego/serialKiller';
+import { SUSPECTS } from '@site/src/utils/juego/suspects';
 import '../../css/juego.css';
 
 function getRankLabel(xp) {
@@ -38,8 +41,13 @@ export default function Juego() {
     load();
   }, []);
 
+  const completed = stats?.completedCases || [];
+  const knownClues = getKnownClues(completed);
+  const eliminated = stats?.eliminatedSuspects || [];
+  const activeCount = SUSPECTS.length - eliminated.length;
+
   const cards = [
-    { icon: '🎮', title: 'Nueva partida', text: 'Elige un caso para investigar.', to: '/juego/casos', disabled: false },
+    { icon: '🎮', title: 'Nueva partida', text: 'Elige un capítulo del caso.', to: '/juego/casos', disabled: false },
     {
       icon: '📁',
       title: 'Continuar',
@@ -50,48 +58,74 @@ export default function Juego() {
       disabled: !pendingCase,
       highlight: Boolean(pendingCase),
     },
-    { icon: '🏆', title: 'Logros', text: 'Ranking de detectives y medallas.', to: '/juego/logros', disabled: false },
-    { icon: '⚙️', title: 'Opciones', text: 'Ajustes de sonido, dificultad y más.', to: '/juego/opciones', disabled: true },
+    {
+      icon: '🕵️',
+      title: 'Sospechosos',
+      text: `${activeCount} activos · ${knownClues.length} pistas`,
+      to: '/juego/sospechosos',
+      disabled: false,
+    },
+    { icon: '🏆', title: 'Logros', text: 'Ranking de detectives.', to: '/juego/logros', disabled: false },
   ];
 
   return (
-    <Layout title="Juego" description="Panel principal del juego de detectives">
+    <Layout title="Juego" description="El Círculo de Portland">
       <main className="juego-page">
         <div className="container margin-vert--xl">
           <header className="juego-hero">
-            <span className="juego-eyebrow">PANEL PRINCIPAL</span>
-            <h1>Bienvenido, detective</h1>
-            <p>Elige qué hacer a continuación.</p>
+            <span className="juego-eyebrow">EL CÍRCULO DE PORTLAND</span>
+            <h1>Expediente activo</h1>
+            <p>Un asesino serial. 30 sospechosos. 20 capítulos para resolverlo.</p>
           </header>
 
           {stats && (
-            <section className="player-summary">
-              <div className="player-summary__item">
-                <span className="player-summary__icon">⭐</span>
-                <div>
-                  <div className="player-summary__label">Puntos totales</div>
-                  <div className="player-summary__value">{stats.xp || 0}</div>
+            <>
+              {/* Progreso de la historia */}
+              <section className="story-progress">
+                <div className="story-progress__label">
+                  <span>📖 Investigación en curso</span>
+                  <span>{completed.length} / {TOTAL_CASES} capítulos</span>
                 </div>
-              </div>
-              <div className="player-summary__item">
-                <span className="player-summary__icon">🔍</span>
-                <div>
-                  <div className="player-summary__label">Casos resueltos</div>
-                  <div className="player-summary__value">
-                    {(stats.completedCases || []).length} / 4
+                <div className="story-progress__bar">
+                  <div
+                    className="story-progress__fill"
+                    style={{ width: `${(completed.length / TOTAL_CASES) * 100}%` }}
+                  />
+                </div>
+
+                <div className="story-progress__stats">
+                  <div>
+                    <span className="story-stat__value">{knownClues.length}</span>
+                    <span className="story-stat__label">Pistas</span>
+                  </div>
+                  <div>
+                    <span className="story-stat__value">{activeCount}</span>
+                    <span className="story-stat__label">Sospechosos activos</span>
+                  </div>
+                  <div>
+                    <span className="story-stat__value">{stats.xp || 0}</span>
+                    <span className="story-stat__label">Puntos</span>
+                  </div>
+                  <div>
+                    <span className="story-stat__value">{getRankLabel(stats.xp || 0)}</span>
+                    <span className="story-stat__label">Rango</span>
                   </div>
                 </div>
-              </div>
-              <div className="player-summary__item">
-                <span className="player-summary__icon">🏅</span>
-                <div>
-                  <div className="player-summary__label">Rango</div>
-                  <div className="player-summary__value">
-                    {getRankLabel(stats.xp || 0)}
-                  </div>
-                </div>
-              </div>
-            </section>
+              </section>
+
+              {/* Botón directo a sospechosos */}
+              {knownClues.length > 0 && (
+                <section className="story-cta">
+                  <p>
+                    Tienes <strong>{knownClues.length}</strong> pistas. Ya puedes
+                    empezar a eliminar sospechosos.
+                  </p>
+                  <Link to="/juego/sospechosos" className="button button--primary">
+                    🕵️ Ir al tablero de sospechosos
+                  </Link>
+                </section>
+              )}
+            </>
           )}
 
           <section className="juego-grid">

@@ -1,125 +1,76 @@
 export const CASE_001 = {
   id: 'case-001',
-  title: 'El robo del collar de esmeraldas',
+  title: 'El primer naipe',
   briefing:
-    'Durante la gala benéfica anual de la familia Vanderbilt, un collar valorado en $50.000 desapareció de la caja fuerte del despacho. Cinco invitados tuvieron acceso a la zona privada. Solo uno de ellos es el culpable.',
+    'Un contador del Pearl District fue hallado muerto en su oficina. Junto al cuerpo, el asesino dejó un As de Picas. El forense encontró una herida profunda: el ataque vino desde atrás y con la mano izquierda. Es la primera víctima de lo que la prensa ya llama "El Círculo de Portland".',
   coverImage:
-    'https://images.unsplash.com/photo-1580584126903-c17d41830450?w=1200',
+    'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200',
   difficulty: 2,
   scenes: [
     {
       id: 'scene-1',
-      name: 'Salón principal',
+      name: 'Oficina del contador',
       image:
-        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1600',
+        'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1600',
       hotspots: [
-        { id: 'h1', x: 25, y: 60, itemId: 'foto-1' },
-        { id: 'h2', x: 70, y: 45, itemId: 'copa-1' },
-        { id: 'h3', x: 50, y: 80, itemId: 'panuelo-1' },
+        { id: 'h1', x: 30, y: 55, itemId: 'naipe-1' },
+        { id: 'h2', x: 70, y: 45, itemId: 'taza-1' },
       ],
     },
     {
       id: 'scene-2',
-      name: 'Despacho privado',
+      name: 'Pasillo del edificio',
       image:
-        'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=1600',
+        'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1600',
       hotspots: [
-        { id: 'h4', x: 40, y: 55, itemId: 'guante-1' },
-        { id: 'h5', x: 75, y: 30, itemId: 'huella-1' },
-      ],
-    },
-    {
-      id: 'scene-3',
-      name: 'Jardín trasero',
-      image:
-        'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600',
-      hotspots: [
-        { id: 'h6', x: 55, y: 70, itemId: 'collar-1' },
-        { id: 'h7', x: 20, y: 40, itemId: 'cigarro-1' },
+        { id: 'h3', x: 45, y: 60, itemId: 'grabacion-1' },
+        { id: 'h4', x: 75, y: 35, itemId: 'cigarro-1' },
       ],
     },
   ],
   items: [
     {
-      id: 'foto-1',
-      name: 'Foto firmada',
-      type: 'documento',
-      icon: '📸',
-      result:
-        'Fotografía con dedicatoria: "Para Andrea, con cariño. — L.V."',
-    },
-    {
-      id: 'copa-1',
-      name: 'Copa de champán',
-      type: 'forense',
-      icon: '🥂',
-      result: 'Restos de labial rojo intenso. Coincide con Andrea Ruiz.',
-    },
-    {
-      id: 'panuelo-1',
-      name: 'Pañuelo de seda',
-      type: 'documento',
-      icon: '🧣',
-      result: 'Bordado con iniciales "C.M." — Carlos Mendoza.',
-    },
-    {
-      id: 'guante-1',
-      name: 'Guante de látex',
-      type: 'forense',
-      icon: '🧤',
-      result: 'Con restos de sudor. ADN coincide con Andrea Ruiz.',
-    },
-    {
-      id: 'huella-1',
-      name: 'Huella dactilar',
-      type: 'forense',
-      icon: '🔍',
-      result: 'Huella parcial en la caja fuerte. Coincide con Andrea Ruiz.',
-    },
-    {
-      id: 'collar-1',
-      name: 'Collar enterrado',
+      id: 'naipe-1',
+      name: 'As de Picas',
       type: 'evidencia',
-      icon: '💎',
-      result: 'El collar robado, enterrado bajo un arbusto del jardín.',
+      icon: '🃏',
+      result: 'Naipe limpio, sin huellas. Dejado intencionalmente como firma.',
+    },
+    {
+      id: 'taza-1',
+      name: 'Taza de café',
+      type: 'forense',
+      icon: '☕',
+      result: 'Dos tazas: el contador había recibido visita antes de morir.',
+    },
+    {
+      id: 'grabacion-1',
+      name: 'Grabación de seguridad',
+      type: 'evidencia',
+      icon: '📹',
+      result: 'Una silueta muy alta sale del edificio a las 22:47. Se agacha al pasar por la puerta.',
     },
     {
       id: 'cigarro-1',
       name: 'Colilla de cigarro',
       type: 'forense',
       icon: '🚬',
-      result: 'Marca que solo fuma Laura Vanderbilt.',
+      result: 'Marca poco común. Restos de saliva para análisis de ADN.',
     },
   ],
   suspects: [
-    {
-      id: 's1',
-      name: 'Andrea Ruiz',
-      alibi: 'Bailaba en la pista central cuando apagaron las luces.',
-    },
-    {
-      id: 's2',
-      name: 'Carlos Mendoza',
-      alibi: 'Estaba en el bar pidiendo un whisky.',
-    },
-    {
-      id: 's3',
-      name: 'Laura Vanderbilt',
-      alibi: 'Recibía a los invitados en la entrada principal.',
-    },
-    {
-      id: 's4',
-      name: 'Miguel Torres',
-      alibi: 'Estaba en el baño arreglándose la corbata.',
-    },
-    {
-      id: 's5',
-      name: 'Sofía Herrera',
-      alibi: 'Atendía una llamada de trabajo en el pasillo.',
-    },
+    { id: 's1', name: 'Socio del contador', alibi: 'Dice que se fue antes de las 8 PM.' },
+    { id: 's2', name: 'Vigilante nocturno', alibi: 'Estaba en la garita del sótano.' },
+    { id: 's3', name: 'Cliente misterioso', alibi: 'Nadie lo vio entrar. Reservó con nombre falso.' },
+    { id: 's4', name: 'Asistente personal', alibi: 'Estaba en su casa cuidando a su gato.' },
   ],
   solution: {
-    guiltyId: 's1',
-    requiredEvidence: ['guante-1', 'huella-1'],
+    guiltyId: 's3',
+    requiredEvidence: ['naipe-1', 'grabacion-1'],
+  },
+  serialClue: {
+    attribute: 'dominantHand',
+    value: 'zurdo',
+    text: 'El forense determinó que el ataque vino de un zurdo. El asesino es zurdo.',
   },
 };

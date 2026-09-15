@@ -14,6 +14,7 @@ import {
   clearProgress,
   registerCaseWin,
   calculatePoints,
+   saveSerialKillerClue,
 } from '@site/src/utils/juego/storage';
 import '../../css/juego.css';
 
@@ -170,37 +171,49 @@ export default function NuevaPartida() {
   };
 
   const handleAccuse = (suspectId) => {
-    const isGuilty = suspectId === caseData.solution.guiltyId;
-    const hasEvidence = caseData.solution.requiredEvidence.every((e) =>
-      analyzedItems.includes(e)
-    );
+  const isGuilty = suspectId === caseData.solution.guiltyId;
+  const hasEvidence = caseData.solution.requiredEvidence.every((e) =>
+    analyzedItems.includes(e)
+  );
 
-    if (isGuilty && hasEvidence) {
-      const earned = calculatePoints(totalElapsed, caseData.difficulty);
-      setPointsEarned(earned);
-      setResult('win');
+  if (isGuilty && hasEvidence) {
+    const earned = calculatePoints(totalElapsed, caseData.difficulty);
+    setPointsEarned(earned);
+    setResult('win');
 
-      const user = auth.currentUser;
-      if (user) {
-        const timeUsed = totalElapsed;
-        const userName =
-          user.displayName || user.email?.split('@')[0] || 'Detective';
-        clearProgress(user.uid, caseData.id);
-        registerCaseWin(
+    const user = auth.currentUser;
+    if (user) {
+      const timeUsed = totalElapsed;
+      const userName =
+        user.displayName || user.email?.split('@')[0] || 'Detective';
+
+      clearProgress(user.uid, caseData.id);
+      registerCaseWin(
+        user.uid,
+        userName,
+        caseData.id,
+        caseData.title,
+        timeUsed,
+        caseData.difficulty
+      );
+
+      // NUEVO: guardar la pista sobre el asesino serial
+      if (caseData.serialClue) {
+        saveSerialKillerClue(
           user.uid,
-          userName,
           caseData.id,
-          caseData.title,
-          timeUsed,
-          caseData.difficulty
+          caseData.serialClue.attribute,
+          caseData.serialClue.value,
+          caseData.serialClue.text
         );
       }
-    } else if (isGuilty && !hasEvidence) {
-      setResult('need_evidence');
-    } else {
-      setResult('wrong');
     }
-  };
+  } else if (isGuilty && !hasEvidence) {
+    setResult('need_evidence');
+  } else {
+    setResult('wrong');
+  }
+};
 
   const resetCase = () => {
     const user = auth.currentUser;
@@ -439,6 +452,13 @@ export default function NuevaPartida() {
                     <p>
                       <strong>Tiempo total:</strong> {formatTime(totalElapsed)}
                     </p>
+                    {caseData.serialClue && (
+  <div className="story-clue">
+    <span className="story-clue__icon">🕵️</span>
+    <p className="story-clue__title">Nueva pista sobre el asesino</p>
+    <p className="story-clue__text">{caseData.serialClue.text}</p>
+  </div>
+)}
                     <p style={{ fontSize: '1.1rem' }}>
                       ⭐ Has ganado{' '}
                       <strong style={{ color: '#f59e0b' }}>
