@@ -8,69 +8,69 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 const highlights = [
 
-  {
-    icon: '📚',
+  //{
+  //  icon: '📚',
 
-    title:
-      'Cursos y talleres',
+  //  title:
+  //    'Cursos y talleres',
 
-    text:
-      'Rutas de aprendizaje por módulos con contenido progresivo y ejercicios prácticos.',
+  // text:
+  //   'Rutas de aprendizaje por módulos con contenido progresivo y ejercicios prácticos.',
 
-    url:
-      '/Cursos',
-  },
+  //  url:
+  //    '/Cursos',
+  //},
 
-  {
-    icon: '🧭',
+  //{
+  //  icon: '🧭',
 
-    title:
-      'Documentación',
+  //  title:
+  //    'Documentación',
 
-    text:
-      'Guías organizadas para consultar procesos, conceptos y soluciones de soporte.',
+  //  text:
+  //    'Guías organizadas para consultar procesos, conceptos y soluciones de soporte.',
 
-    url:
-      '/docs/documentacion/isvleo/pruebasleo',
-  },
+  //  url:
+  //    '/docs/documentacion/isvleo/pruebasleo',
+  //},
 
-  {
-    icon: '🛠️',
+  //{
+  //  icon: '🛠️',
 
-    title:
-      'Casos comunes',
+  //  title:
+  //    'Casos comunes',
 
-    text:
-      'Respuestas rápidas para incidentes frecuentes y tareas repetitivas del equipo.',
+  //  text:
+  //    'Respuestas rápidas para incidentes frecuentes y tareas repetitivas del equipo.',
 
-    url:
-      '/docs/casos/acceso-usuarios',
-  },
+  //  url:
+  //    '/docs/casos/acceso-usuarios',
+  //},
 
-  {
-    icon: '💡',
+  //{
+  //  icon: '💡',
 
-    title:
-      'Sugerencias',
+  //  title:
+  //    'Sugerencias',
 
-    text:
-      'Comparte ideas para mejorar la experiencia del equipo.',
+  //  text:
+  //    'Comparte ideas para mejorar la experiencia del equipo.',
 
-    url:
-      '/sugerencias',
-  },
-  {
-    icon: '💡',
+  //  url:
+  //    '/sugerencias',
+  //},
+  //{
+  //  icon: '💡',
 
-    title:
-      'Busqueda criminal.',
+  //  title:
+  //    'Busqueda criminal.',
 
-    text:
-      'Pon a prueba tus habilidades de investigacion y observacion con unos casos en los cuales unas pisas te llevaran a la respuesta.',
+  //  text:
+  //    'Pon a prueba tus habilidades de investigacion y observacion con unos casos en los cuales unas pisas te llevaran a la respuesta.',
 
-    url:
-      '/juego',
-  },
+  //  url:
+  //    '/juego',
+  //},
     {
     icon: '💡',
 
