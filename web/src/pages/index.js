@@ -71,6 +71,18 @@ const highlights = [
     url:
       '/juego',
   },
+    {
+    icon: '💡',
+
+    title:
+      'calculadora.',
+
+    text:
+      'Pon a prueba tus habilidades de investigacion y observacion con unos casos en los cuales unas pisas te llevaran a la respuesta.',
+
+    url:
+      '/calculadora',
+  },
 
 ];
 
@@ -83,7 +95,7 @@ export default function Home() {
 
     <Layout
       title="Inicio"
-      description="Biblioteca de conocimiento y soporte asistido"
+      description="Biblioteca de conocimiento y calculos de horas"
     >
 
       <main>
@@ -97,11 +109,11 @@ export default function Home() {
             <div className="home-hero__content">
 
               <span className="auth-eyebrow">
-                BIBLIOTECA DE CONOCIMIENTO
+                BIBLIOTECA DE CONOCIMIENTO Y CALCULOS DE HORAS
               </span>
 
               <h1>
-                Soporte asistido
+                Calculadora de horas extra
               </h1>
 
               <p>

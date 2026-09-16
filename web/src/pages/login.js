@@ -220,12 +220,11 @@ export default function Login() {
         <section className="container">
           <div className="auth-card">
             <header className="auth-card__header">
-              <span className="auth-eyebrow">BIBLIOTECA DE CONOCIMIENTO</span>
               <h1>{isReset ? 'Recupera tu acceso' : isLogin ? 'Bienvenido de nuevo' : 'Crea tu cuenta'}</h1>
               <p>
                 {isReset
                   ? 'Te enviaremos instrucciones para crear una contraseña nueva.'
-                  : 'Accede a cursos, documentación y soluciones del equipo.'}
+                  : 'Accede a nuestro modulo de calculos de horas extra'}
               </p>
             </header>
 

@@ -1,0 +1,420 @@
+/* =========================================================
+   CALCULADORA DE HORAS EXTRA
+   ========================================================= */
+
+.calc-page {
+  min-height: calc(100vh - 60px);
+  background:
+    radial-gradient(circle at 12% 5%, rgba(46, 133, 85, 0.08), transparent 28%),
+    radial-gradient(circle at 88% 20%, rgba(46, 133, 85, 0.05), transparent 30%);
+  padding-bottom: 3rem;
+}
+
+/* ============ HERO ============ */
+.calc-hero { text-align: center; max-width: 720px; margin: 0 auto 2rem; }
+.calc-hero__eyebrow {
+  display: inline-block; font-size: 0.72rem; font-weight: 800;
+  letter-spacing: 0.3em; color: var(--ifm-color-primary); margin-bottom: 0.6rem;
+}
+.calc-hero__title { margin: 0 0 0.6rem; font-size: clamp(1.8rem, 4vw, 2.5rem); }
+.calc-hero__subtitle { margin: 0; color: var(--site-muted); font-size: 1rem; }
+
+/* ============ CONFIG GLOBAL ============ */
+.calc-config {
+  max-width: 900px; margin: 0 auto 1rem;
+  padding: 1.25rem 1.5rem; background: var(--ifm-background-surface-color);
+  border: 1px solid var(--site-border); border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+.calc-config__title { margin: 0 0 1rem; font-size: 1rem; }
+.calc-config__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+/* ============ FIELDS ============ */
+.calc-field { display: flex; flex-direction: column; gap: 0.35rem; }
+.calc-field label {
+  font-size: 0.72rem; font-weight: 700; color: var(--site-muted);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.calc-field input, .calc-field select {
+  width: 100%; padding: 0.6rem 0.85rem; font-size: 0.92rem;
+  font-family: inherit; border: 1px solid var(--site-border);
+  border-radius: 10px; background: var(--site-surface, var(--ifm-background-surface-color));
+  color: inherit; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.calc-field input:focus, .calc-field select:focus {
+  outline: none; border-color: var(--ifm-color-primary);
+  box-shadow: 0 0 0 3px rgba(46, 133, 85, 0.14);
+}
+.calc-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.85rem; }
+
+/* ============ BOTONES ============ */
+.calc-btn {
+  padding: 0.55rem 1.1rem; border-radius: 10px; font-size: 0.88rem;
+  font-weight: 700; font-family: inherit; cursor: pointer;
+  border: 1px solid transparent; transition: all 0.15s;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+}
+.calc-btn--primary {
+  background: var(--ifm-color-primary); color: white;
+  border-color: var(--ifm-color-primary);
+}
+.calc-btn--primary:hover {
+  background: var(--ifm-color-primary-dark); border-color: var(--ifm-color-primary-dark);
+  transform: translateY(-1px); box-shadow: 0 4px 12px rgba(46, 133, 85, 0.25);
+}
+.calc-btn--ghost {
+  background: transparent; color: var(--site-muted); border-color: var(--site-border);
+}
+.calc-btn--ghost:hover { background: rgba(0, 0, 0, 0.03); color: var(--ifm-font-color-base); }
+.calc-btn--danger {
+  background: #dc2626; color: white; border-color: #dc2626;
+}
+.calc-btn--danger:hover { background: #b91c1c; border-color: #b91c1c; }
+.calc-btn--lg { padding: 0.85rem 1.75rem; font-size: 1rem; }
+
+/* ============ BARRA DE ACCIÓN ============ */
+.calc-actions-bar {
+  max-width: 900px; margin: 0 auto 1rem;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 1rem; flex-wrap: wrap;
+}
+.calc-actions-bar__count {
+  font-size: 0.85rem; font-weight: 700; color: var(--site-muted);
+}
+
+/* ============ EMPLEADOS ============ */
+.calc-emp {
+  max-width: 900px; margin: 0 auto 0.85rem;
+  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--site-border);
+  border-radius: 14px; overflow: hidden;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.calc-emp:hover {
+  border-color: rgba(46, 133, 85, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+.calc-emp__header {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 1rem; padding: 0.85rem 1.1rem;
+  background: rgba(46, 133, 85, 0.04);
+  border-bottom: 1px solid var(--site-border);
+}
+.calc-emp__header-left {
+  display: flex; align-items: center; gap: 0.75rem;
+  flex: 1; min-width: 0; cursor: pointer;
+}
+.calc-emp__number {
+  display: inline-grid; place-items: center;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--ifm-color-primary); color: white;
+  font-weight: 800; font-size: 0.78rem; flex-shrink: 0;
+}
+.calc-emp__name-input {
+  flex: 1; min-width: 0; padding: 0.4rem 0.7rem;
+  border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: inherit; font-family: inherit;
+  font-size: 0.95rem; font-weight: 700; transition: all 0.15s;
+}
+.calc-emp__name-input:hover { background: rgba(255, 255, 255, 0.6); }
+.calc-emp__name-input:focus {
+  outline: none; background: var(--ifm-background-surface-color);
+  border-color: var(--ifm-color-primary);
+}
+.calc-emp__header-right {
+  display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;
+}
+.calc-emp__badge {
+  display: inline-flex; align-items: center;
+  padding: 0.3rem 0.7rem; font-size: 0.78rem; font-weight: 700;
+  background: var(--site-soft, rgba(46, 133, 85, 0.08));
+  border-radius: 999px; color: var(--ifm-color-primary); white-space: nowrap;
+}
+.calc-emp__badge--green { background: rgba(34, 197, 94, 0.12); color: #15803d; }
+.calc-emp__icon-btn {
+  display: inline-grid; place-items: center;
+  width: 32px; height: 32px;
+  border: 1px solid var(--site-border); border-radius: 8px;
+  background: var(--ifm-background-surface-color);
+  cursor: pointer; font-size: 0.85rem; transition: all 0.15s;
+}
+.calc-emp__icon-btn--danger:hover {
+  background: rgba(220, 38, 38, 0.08); border-color: #dc2626;
+}
+.calc-emp__chevron {
+  font-size: 0.75rem; color: var(--site-muted);
+  margin-left: 0.25rem; cursor: pointer;
+}
+
+/* ============ BODY / SECCIONES ============ */
+.calc-emp__body { padding: 1.25rem 1.35rem; }
+
+.calc-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--site-border);
+}
+.calc-section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+
+.calc-section__title {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.85rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--ifm-color-primary);
+  margin-bottom: 0.9rem;
+}
+.calc-section__hint {
+  font-size: 0.72rem; font-weight: 500;
+  text-transform: none; letter-spacing: 0;
+  color: var(--site-muted);
+  margin-left: 0.5rem;
+}
+.calc-section__grid {
+  display: grid; gap: 1rem;
+}
+.calc-section__grid--3 { grid-template-columns: repeat(3, 1fr); }
+
+/* ============ CALENDARIO ============ */
+.calendar {
+  background: var(--site-surface, var(--ifm-background-surface-color));
+  border: 1px solid var(--site-border);
+  border-radius: 12px; overflow: hidden;
+}
+
+.calendar__header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.85rem 1rem;
+  background: rgba(46, 133, 85, 0.04);
+  border-bottom: 1px solid var(--site-border);
+}
+.calendar__month {
+  margin: 0; font-size: 1rem; font-weight: 800;
+  color: var(--ifm-color-primary);
+}
+.calendar__nav {
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border: 1px solid var(--site-border); border-radius: 8px;
+  background: var(--ifm-background-surface-color);
+  cursor: pointer; font-size: 0.85rem; color: inherit;
+  transition: all 0.15s;
+}
+.calendar__nav:hover {
+  background: var(--ifm-color-primary); color: white;
+  border-color: var(--ifm-color-primary);
+}
+
+.calendar__weekdays {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  padding: 0.5rem 0.5rem 0;
+  font-size: 0.7rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--site-muted); text-align: center;
+}
+.calendar__weekdays span { padding: 0.35rem 0; }
+
+.calendar__grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 4px; padding: 0.5rem;
+}
+
+.calendar__cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  padding: 0.35rem 0.25rem;
+  border: 1px solid var(--site-border);
+  border-radius: 10px;
+  background: var(--ifm-background-surface-color);
+  color: inherit; cursor: pointer;
+  font-family: inherit; font-size: 0.88rem; font-weight: 700;
+  transition: all 0.15s;
+  min-height: 60px;
+}
+.calendar__cell:hover {
+  border-color: var(--ifm-color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(46, 133, 85, 0.15);
+}
+.calendar__cell--empty {
+  border: none; background: transparent; cursor: default; pointer-events: none;
+}
+.calendar__cell--holiday {
+  background: rgba(234, 179, 8, 0.06);
+  border-color: rgba(234, 179, 8, 0.3);
+}
+.calendar__cell--today {
+  border: 2px solid var(--ifm-color-primary);
+  box-shadow: 0 0 0 3px rgba(46, 133, 85, 0.15);
+}
+.calendar__cell--filled {
+  background: rgba(46, 133, 85, 0.12);
+  border-color: var(--ifm-color-primary);
+}
+
+.calendar__day {
+  font-size: 0.9rem; line-height: 1;
+}
+.calendar__badge {
+  font-size: 0.62rem; font-weight: 800;
+  padding: 0.1rem 0.35rem;
+  background: var(--ifm-color-primary); color: white;
+  border-radius: 999px; line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* ============ TABLA ============ */
+.calc-table-wrap {
+  overflow-x: auto; border-radius: 10px;
+  border: 1px solid var(--site-border);
+  background: var(--site-surface, var(--ifm-background-surface-color));
+}
+.calc-table { width: 100%; font-size: 0.85rem; border-collapse: collapse; }
+.calc-table thead th {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--site-muted); text-align: left; padding: 0.6rem 0.75rem;
+  font-weight: 700; background: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid var(--site-border);
+}
+.calc-table tbody td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--site-border); }
+.calc-table .right { text-align: right; }
+.calc-table .muted { color: var(--site-muted); }
+.calc-table .tabular { font-variant-numeric: tabular-nums; }
+.calc-table .bold { font-weight: 800; }
+.calc-table .extra { color: var(--ifm-color-primary); font-weight: 700; }
+.calc-table tr.empty { opacity: 0.35; }
+.calc-table tfoot td {
+  padding-top: 0.75rem; padding-bottom: 0.75rem;
+  border-top: 2px solid var(--site-border);
+  background: rgba(46, 133, 85, 0.03);
+}
+.calc-table .total-pago { color: var(--ifm-color-primary); font-size: 0.95rem; }
+
+.calc-mini-summary {
+  display: flex; gap: 1.5rem; flex-wrap: wrap;
+  margin-top: 0.75rem; padding: 0.7rem 1rem;
+  background: rgba(46, 133, 85, 0.06);
+  border-radius: 10px; font-size: 0.85rem;
+}
+.calc-mini-summary span { color: var(--site-muted); }
+.calc-mini-summary strong { color: var(--ifm-color-primary); }
+
+/* ============ TOTALES GLOBALES ============ */
+.calc-totales {
+  max-width: 900px; margin: 2rem auto 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(46, 133, 85, 0.06), rgba(46, 133, 85, 0.02));
+  border: 2px solid var(--ifm-color-primary); border-radius: 14px;
+}
+.calc-totales__title { margin: 0 0 1.25rem; font-size: 1.05rem; }
+.calc-totales__grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.85rem;
+}
+.calc-total-card {
+  padding: 1rem 1.15rem;
+  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--site-border); border-radius: 12px;
+}
+.calc-total-card--accent { border-color: rgba(46, 133, 85, 0.4); background: rgba(46, 133, 85, 0.06); }
+.calc-total-card--green { border-color: rgba(34, 197, 94, 0.5); background: rgba(34, 197, 94, 0.06); }
+.calc-total-card__label {
+  font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--site-muted); margin-bottom: 0.4rem;
+}
+.calc-total-card__value {
+  font-size: 1.5rem; font-weight: 900;
+  color: var(--ifm-color-primary); line-height: 1.1;
+}
+
+.calc-bottom-actions { text-align: center; margin-top: 1.5rem; }
+
+/* ============ MODAL DE DÍA ============ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: grid; place-items: center;
+  z-index: 1000; padding: 1rem;
+  animation: modal-fade 0.15s ease;
+}
+@keyframes modal-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-box {
+  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--site-border);
+  border-radius: 16px;
+  width: min(520px, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  animation: modal-pop 0.2s ease;
+}
+@keyframes modal-pop {
+  from { transform: scale(0.94); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-box--day { width: min(480px, 100%); }
+
+.modal-box__header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 1rem; padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--site-border);
+}
+.modal-box__eyebrow {
+  font-size: 0.68rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--ifm-color-primary);
+}
+.modal-box__title {
+  margin: 0.3rem 0 0; font-size: 1.05rem; line-height: 1.3;
+  text-transform: capitalize;
+}
+.modal-box__close {
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border: 1px solid var(--site-border);
+  border-radius: 50%; background: transparent;
+  cursor: pointer; font-size: 1.4rem; line-height: 1; color: inherit;
+  transition: all 0.15s;
+}
+.modal-box__close:hover {
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+}
+
+.modal-box__body { padding: 1.25rem 1.5rem; }
+
+.modal-box__hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: var(--site-muted);
+  font-style: italic;
+}
+
+.modal-box__footer {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 0.5rem; padding: 1rem 1.5rem;
+  border-top: 1px solid var(--site-border);
+  background: rgba(0, 0, 0, 0.02);
+  flex-wrap: wrap;
+}
+.modal-box__footer-right {
+  display: flex; gap: 0.5rem; margin-left: auto;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 700px) {
+  .calc-config__grid, .calc-grid-2, .calc-section__grid--3 { grid-template-columns: 1fr; }
+  .calc-emp__header { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+  .calc-emp__header-right { justify-content: space-between; }
+  .calc-table thead th:nth-child(2),
+  .calc-table tbody td:nth-child(2) { display: none; }
+  .calc-totales__grid { grid-template-columns: 1fr 1fr; }
+  .calendar__cell { min-height: 48px; font-size: 0.8rem; }
+  .calendar__badge { font-size: 0.55rem; padding: 0.05rem 0.3rem; }
+  .modal-box { width: 100%; }
+}
