@@ -24,6 +24,16 @@ export const CLUES = [
   { caseId: 'case-018', attribute: 'birthMonth',    value: 'Mar',             text: 'Fecha grabada en el arma: 15 de marzo.' },
   { caseId: 'case-019', attribute: 'occupation',    value: 'Arquitecto',      text: 'Los planos usados son de un estudio de arquitectura.' },
   { caseId: 'case-020', attribute: 'district',      value: 'Pearl District',  text: 'Su moto fue captada entrando al Pearl District.' },
+  { caseId: 'case-011', attribute: 'feature',       value: 'Cicatriz',        text: 'La cámara captó al asesino con una cicatriz en la mejilla.' },
+{ caseId: 'case-012', attribute: 'height',        value: 'muy alto',        text: 'Las huellas y testigos confirman: mide más de 1.90m.' },
+{ caseId: 'case-013', attribute: 'weight',        value: 'atlético',        text: 'Complexión atlética, no musculosa.' },
+{ caseId: 'case-014', attribute: 'hair',          value: 'castaño oscuro',  text: 'ADN confirmado: cabello castaño oscuro.' },
+{ caseId: 'case-015', attribute: 'eyes',          value: 'azul grisáceo',   text: 'Testigo: "Ojos gris azulados, casi transparentes".' },
+{ caseId: 'case-016', attribute: 'hasRecord',     value: 'Si',              text: 'Tiene antecedentes penales confirmados.' },
+{ caseId: 'case-017', attribute: 'maritalStatus', value: 'Divorciado',      text: 'El anillo de divorcio olvidado en la escena.' },
+{ caseId: 'case-018', attribute: 'birthMonth',    value: 'Mar',             text: 'La fecha "15/03" en cada arma: nació en marzo.' },
+{ caseId: 'case-019', attribute: 'occupation',    value: 'Arquitecto',      text: 'Los planos confirman: es arquitecto.' },
+{ caseId: 'case-020', attribute: 'district',      value: 'Pearl District',  text: 'Opera y vive en el Pearl District. Nombre: Diego Vargas.' },
 ];
 
 export const TOTAL_CASES = 20;
